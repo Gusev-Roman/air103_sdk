@@ -1633,11 +1633,17 @@ typedef struct
 #define FLASH_DECRYPT_STA_RSA_Msk              (0x1 << FLASH_DECRYPT_STA_RSA_Pos)
 #define FLASH_DECRYPT_STA_RSA                  FLASH_DECRYPT_STA_RSA_Msk
 
+/***************************************************************
+* PSRAM CTRL Register
+****************************************************************/
+#define HR_PSRRAM_BASE_ADDR      (DEVICE_BASE_ADDR + 0x2200)
+#define HR_PSRAM_CTRL_ADDR       (HR_PSRRAM_BASE_ADDR+ 0x00)
+#define HR_PSRAM_OVERTIMER_ADDR  (HR_PSRRAM_BASE_ADDR+ 0x04)
 
 /***************************************************************
  * RSA Reg
  ***************************************************************/
- 
+
 #define RSA_BASE       0x40000000
 
 typedef struct
