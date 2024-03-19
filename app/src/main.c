@@ -16,10 +16,13 @@
 
 #include <stdio.h>
 #include "wm_hal.h"
+#include "wm_psram.h"
 
 #define DUTY_MAX 100
 #define DUTY_MIN 50
 PWM_HandleTypeDef pwm[3];
+PSRAM_HandleTypeDef _psram;
+
 int i, j, m[3] = {0}, d[3] = {DUTY_MIN, (DUTY_MIN + DUTY_MAX) / 2, DUTY_MAX - 1};
 
 static void PWM_Init(PWM_HandleTypeDef *hpwm, uint32_t channel);
@@ -29,6 +32,20 @@ int main(void)
 {
     SystemClock_Config(CPU_CLK_160M);
     printf("enter main\r\n");
+    
+    _psram.Init.Div = 8; // from 3 to 15 (check APBCLK)
+    _psram.Init.Mode = PSRAM_MODE_QSPI;
+    _psram.Instance = PSRAM;
+    
+    HAL_PSRAM_Init(&_psram);
+    
+    uint8_t *pbuf;
+    pbuf = (uint8_t *)0x30000000;
+    for(i=0; i < 1024; i++) pbuf[i] = i;
+    for(i=1023; i >=0; --i){
+        printf("%02X ", pbuf[i]);
+    }
+    printf("\n");
 
     for (i = 2; i >= 0; i--)
     {

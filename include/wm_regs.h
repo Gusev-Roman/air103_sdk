@@ -71,7 +71,7 @@ typedef enum IRQn
 #define DMA_Channel4_BASE    (DMA_BASE + 0x00D0)
 #define DMA_Channel5_BASE    (DMA_BASE + 0x0100)
 #define DMA_Channel6_BASE    (DMA_BASE + 0x0130)
-#define DMA_Channel7_BASE    (DMA_BASE + 0x0460)
+#define DMA_Channel7_BASE    (DMA_BASE + 0x0160)
 
 typedef struct
 {
@@ -565,6 +565,41 @@ typedef struct
 #define RCC_RST_STATUS_WDG_Msk              (0x1 << RCC_RST_STATUS_WDG_Pos)
 #define RCC_RST_STATUS_WDG                  RCC_RST_STATUS_WDG_Msk
 
+/***************************************************************
+ * PSRAM Reg
+ ***************************************************************/
+
+#define PSRAM_BASE	(DEVICE_BASE_ADDR + 0x2200)
+
+typedef struct
+{
+	__IOM uint32_t CR;
+	__IOM uint32_t TIMEOUT;
+} PSRAM_TypeDef;
+
+#define PSRAM_CR_HALFSLEEP_EN_Pos			(11)
+#define PSRAM_CR_HALFSLEEP_EN_Msk			(0x1 << PSRAM_CR_HALFSLEEP_EN_Pos)
+#define PSRAM_CR_HALFSLEEP_EN				PSRAM_CR_HALFSLEEP_EN_Msk
+#define PSRAM_CR_TCPH_Pos					(8)
+#define PSRAM_CR_TCPH_Msk					(0x7 << PSRAM_CR_TCPH_Pos)
+#define PSRAM_CR_TCPH						PSRAM_CR_TCPH_Msk
+#define PSRAM_CR_DIV_Pos					(4)
+#define PSRAM_CR_DIV_Msk					(0xF << PSRAM_CR_DIV_Pos)
+#define PSRAM_CR_DIV						PSRAM_CR_DIV_Msk
+#define PSRAM_CR_BURST_EN_Pos				(2)
+#define PSRAM_CR_BURST_EN_Msk				(0x1 << PSRAM_CR_BURST_EN_Pos)
+#define PSRAM_CR_BURST_EN					PSRAM_CR_BURST_EN_Msk
+#define PSRAM_CR_QUAD_EN_Pos				(1)
+#define PSRAM_CR_QUAD_EN_Msk				(0x1 << PSRAM_CR_QUAD_EN_Pos)
+#define PSRAM_CR_QUAD_EN					PSRAM_CR_QUAD_EN_Msk
+#define PSRAM_CR_SPI_EN						(0x0 << PSRAM_CR_QUAD_EN_Pos)
+#define PSRAM_CR_RST_Pos					(0)
+#define PSRAM_CR_RST_Msk					(0x1 << PSRAM_CR_RST_Pos)
+#define PSRAM_CR_RST						PSRAM_CR_RST_Msk
+
+#define PSRAM_TIMEOUT_Pos					(0)
+#define PSRAM_TIMEOUT_Msk					(0xFFF << PSRAM_TIMEOUT_Pos)
+#define PSRAM_TIMEOUT						PSRAM_TIMEOUT_Msk
 
 /***************************************************************
  * I2C Reg
@@ -1632,13 +1667,6 @@ typedef struct
 #define FLASH_DECRYPT_STA_RSA_Pos              (0)
 #define FLASH_DECRYPT_STA_RSA_Msk              (0x1 << FLASH_DECRYPT_STA_RSA_Pos)
 #define FLASH_DECRYPT_STA_RSA                  FLASH_DECRYPT_STA_RSA_Msk
-
-/***************************************************************
-* PSRAM CTRL Register
-****************************************************************/
-#define HR_PSRRAM_BASE_ADDR      (DEVICE_BASE_ADDR + 0x2200)
-#define HR_PSRAM_CTRL_ADDR       (HR_PSRRAM_BASE_ADDR+ 0x00)
-#define HR_PSRAM_OVERTIMER_ADDR  (HR_PSRRAM_BASE_ADDR+ 0x04)
 
 /***************************************************************
  * RSA Reg

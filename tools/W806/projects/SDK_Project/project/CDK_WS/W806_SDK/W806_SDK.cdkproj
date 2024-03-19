@@ -78,6 +78,9 @@
       <File Name="../../../../../../../platform/drivers/wm_i2s.c">
         <FileOption/>
       </File>
+      <File Name="../../../../../../../platform/drivers/wm_psram.c">
+        <FileOption/>
+      </File>
     </VirtualDirectory>
     <VirtualDirectory Name="component" ExcludeProjConfig="">
       <VirtualDirectory Name="FreeRTOS">
@@ -292,6 +295,9 @@
       <File Name="../../../../../../../include/driver/wm_i2s.h">
         <FileOption/>
       </File>
+      <File Name="../../../../../../../include/driver/wm_psram.h">
+        <FileOption/>
+      </File>
     </VirtualDirectory>
   </VirtualDirectory>
   <VirtualDirectory Name="app">
@@ -313,9 +319,28 @@
     </VirtualDirectory>
   </VirtualDirectory>
   <MonitorProgress>
-    <FlashOperate>84</FlashOperate>
+    <FlashOperate>25</FlashOperate>
     <DebugLaunch>41</DebugLaunch>
   </MonitorProgress>
+  <DebugSessions>
+    <watchExpressions/>
+    <memoryExpressions>;;;</memoryExpressions>
+    <statistics>;;MHZ;</statistics>
+    <peripheralTabs/>
+    <WatchDisplayFormat>1</WatchDisplayFormat>
+    <LocalDisplayFormat>1</LocalDisplayFormat>
+    <debugLayout/>
+    <memoryTabColSizeExpressions>100:8;100:8;100:8;100:8;</memoryTabColSizeExpressions>
+  </DebugSessions>
+  <VendorInfo>
+    <VendorName>NULL</VendorName>
+  </VendorInfo>
+  <ToolsConfig>
+    <Compiler>
+      <Name>CKV2ElfMinilib</Name>
+      <Version>latest</Version>
+    </Compiler>
+  </ToolsConfig>
   <BuildConfigs>
     <BuildConfig Name="BuildSet">
       <Target>
@@ -409,6 +434,7 @@
           <RunUserProg>yes</RunUserProg>
           <UserProgName>../../../../../../../tools/W806/utilities/cdk_aft_build.sh;../../../../../../../tools/W806/utilities/aft_build_project.sh</UserProgName>
         </AfterMake>
+        <Tools/>
       </User>
       <Compiler>
         <Define>GCC_COMPILE=1;TLS_CONFIG_CPU_XT804=1</Define>
@@ -426,6 +452,7 @@
         <AllWarn>yes</AllWarn>
         <WarnErr>no</WarnErr>
         <OneElfS>yes</OneElfS>
+        <OneElfSPerData>no</OneElfSPerData>
         <Fstrict>no</Fstrict>
       </Compiler>
       <Asm>
@@ -444,6 +471,7 @@
         <OtherFlags>-Wl,-zmax-page-size=1024 -mhard-float</OtherFlags>
         <AutoLDFile>no</AutoLDFile>
         <LinkType/>
+        <IncludeAllLibs>no</IncludeAllLibs>
       </Linker>
       <Debug>
         <LoadApplicationAtStartup>yes</LoadApplicationAtStartup>
@@ -451,10 +479,13 @@
         <StopAt>yes</StopAt>
         <StopAtText>main</StopAtText>
         <InitFile>$(ProjectPath)..\..\..\..\..\..\..\tools\W806\utilities\gdb.init</InitFile>
+        <PreInit/>
+        <AfterLoadFile/>
         <AutoRun>yes</AutoRun>
         <ResetType>Hard Reset</ResetType>
         <SoftResetVal>0</SoftResetVal>
         <ResetAfterLoad>no</ResetAfterLoad>
+        <AfterResetFile/>
         <Dumpcore>no</Dumpcore>
         <DumpcoreText>$(ProjectPath)/$(ProjectName).cdkcore</DumpcoreText>
         <ConfigICE>
@@ -463,6 +494,7 @@
           <CPUNumber>0</CPUNumber>
           <Clock>12000</Clock>
           <Delay>10</Delay>
+          <NResetDelay>100</NResetDelay>
           <WaitReset>50</WaitReset>
           <DDC>yes</DDC>
           <TRST>no</TRST>
@@ -476,6 +508,12 @@
           <GDBName/>
           <GDBServerType>Local</GDBServerType>
           <OtherFlags/>
+          <ICEEnablePCSampling>no</ICEEnablePCSampling>
+          <ICESamplingFreq>1000</ICESamplingFreq>
+          <RemoteICEEnablePCSampling>no</RemoteICEEnablePCSampling>
+          <RemoteICESamplingPort>1026</RemoteICESamplingPort>
+          <Version>latest</Version>
+          <SupportRemoteICEAsyncDebug>no</SupportRemoteICEAsyncDebug>
         </ConfigICE>
         <ConfigSIM>
           <SIMTarget/>
@@ -483,6 +521,7 @@
           <NoGraphic>yes</NoGraphic>
           <Log>no</Log>
           <SimTrace>no</SimTrace>
+          <Version>latest</Version>
         </ConfigSIM>
         <ConfigOpenOCD>
           <OpenOCDExecutablePath/>
@@ -491,10 +530,14 @@
           <OpenOCDTclPortEnable>no</OpenOCDTclPortEnable>
           <OpenOCDTclPort>6666</OpenOCDTclPort>
           <OpenOCDConfigOptions/>
+          <OpenOCDTimeout>5000</OpenOCDTimeout>
+          <PluginID>openocd-sifive</PluginID>
+          <Version>latest</Version>
         </ConfigOpenOCD>
       </Debug>
       <Flash>
         <InitFile>$(ProjectPath)..\..\..\..\..\..\..\tools\W806\utilities\flashinit</InitFile>
+        <PreInit/>
         <Erase>Erase Sectors</Erase>
         <Algorithms Path="">W800_Flash_Tool.elf</Algorithms>
         <Program>yes</Program>
@@ -502,20 +545,10 @@
         <ResetAndRun>no</ResetAndRun>
         <ResetType>Soft Reset</ResetType>
         <SoftResetVal/>
-        <External>no</External>
-        <Command/>
-        <Arguments/>
+        <External>yes</External>
+        <Command>$(ProjectPath)/../../../../../wm_tool.exe</Command>
+        <Arguments>-rs at -ds 2M -dl $(ProjectPath)/../../../../../../../bin/W806/W806.fls -c COM13</Arguments>
       </Flash>
     </BuildConfig>
   </BuildConfigs>
-  <DebugSessions>
-    <watchExpressions/>
-    <memoryExpressions>;;;</memoryExpressions>
-    <statistics>;;MHZ;</statistics>
-    <peripheralTabs/>
-    <WatchDisplayFormat>1</WatchDisplayFormat>
-    <LocalDisplayFormat>1</LocalDisplayFormat>
-    <debugLayout/>
-    <memoryTabColSizeExpressions>100:8;100:8;100:8;100:8;</memoryTabColSizeExpressions>
-  </DebugSessions>
 </Project>
