@@ -3,92 +3,58 @@
  * \file        main.c
  * \author      IOsetting | iosetting@outlook.com
  * \date        
- * \brief       Demo code of PWM in independent mode
- * \note        This will drive 3 on-board LEDs to show fade effect
+ * \brief       Demo code of PSRAM read/write
+ * \note        
  * \version     v0.1
  * \ingroup     demo
- * \remarks     test-board: HLK-W806-KIT-V1.0
- *              PWM Frequency = 40MHz / Prescaler / (Period + 1)；
-                Duty Cycle(Edge Aligned)   = (Pulse + 1) / (Period + 1)
-                Duty Cycle(Center Aligned) = (2 * Pulse + 1) / (2 * (Period + 1))
+ * \remarks     test-board: Air103
  *
 ******************************************************************************/
 
 #include <stdio.h>
 #include "wm_hal.h"
 #include "wm_psram.h"
+#include "psalloc.h"
 
-#define DUTY_MAX 100
-#define DUTY_MIN 50
-PWM_HandleTypeDef pwm[3];
 PSRAM_HandleTypeDef _psram;
 
-int i, j, m[3] = {0}, d[3] = {DUTY_MIN, (DUTY_MIN + DUTY_MAX) / 2, DUTY_MAX - 1};
+int i, j;
 
-static void PWM_Init(PWM_HandleTypeDef *hpwm, uint32_t channel);
 void Error_Handler(void);
+// flash-linked const
+static char *fish = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
 int main(void)
 {
     SystemClock_Config(CPU_CLK_160M);
     printf("enter main\r\n");
-    
-    _psram.Init.Div = 8; // from 3 to 15 (check APBCLK)
+
+    _psram.Init.Div = 4; // from 3 to 15 (check APBCLK)
     _psram.Init.Mode = PSRAM_MODE_QSPI;
     _psram.Instance = PSRAM;
-    
+
     HAL_PSRAM_Init(&_psram);
-    
-    uint8_t *pbuf;
-    pbuf = (uint8_t *)0x30000000;
-    for(i=0; i < 1024; i++) pbuf[i] = i;
-    for(i=1023; i >=0; --i){
-        printf("%02X ", pbuf[i]);
-    }
-    printf("\n");
 
-    for (i = 2; i >= 0; i--)
-    {
-        PWM_Init(&pwm[i], PWM_CHANNEL_0 + i);
-        HAL_PWM_Start(&pwm[i]);
-    }
+    init_heap(); // PSRAM alloc init
+    char **q = malloc(64 * sizeof(char *));		// array of 64 char * in regular RAM
+    for(i=0; i<64; i++){
+        q[i] = (char *)psalloc(strlen(fish)+1);
+        if(!q){
+	  printf("psalloc error!\n");
+	  continue;
+	}
+	else{
+	    strcpy(q[i], fish);
+            heap_walk();
+            printf("q[%d]=[%s]\n", i, q[i]);
 
-    while (1)
-    {
-        for (i = 0; i < 3; i++)
-        {
-            if (m[i] == 0) // Increasing
-            {
-                HAL_PWM_Duty_Set(&pwm[i], d[i]++);
-                if (d[i] == DUTY_MAX)
-                {
-                    m[i] = 1;
-                }
-            }
-            else // Decreasing
-            {
-                HAL_PWM_Duty_Set(&pwm[i], d[i]--);
-                if (d[i] == DUTY_MIN)
-                {
-                    m[i] = 0;
-                }
-            }
         }
-        HAL_Delay(20);
+        HAL_Delay(1000);        // 1s delay
     }
-}
-
-static void PWM_Init(PWM_HandleTypeDef *hpwm, uint32_t channel)
-{
-    hpwm->Instance = PWM;
-    hpwm->Init.AutoReloadPreload = PWM_AUTORELOAD_PRELOAD_ENABLE;
-    hpwm->Init.CounterMode = PWM_COUNTERMODE_EDGEALIGNED_DOWN;
-    hpwm->Init.Prescaler = 4;
-    hpwm->Init.Period = 99;    // Frequency = 40,000,000 / 4 / (99 + 1) = 100,000 = 100KHz
-    hpwm->Init.Pulse = 19;     // Duty Cycle = (19 + 1) / (99 + 1) = 20%
-    hpwm->Init.OutMode = PWM_OUT_MODE_INDEPENDENT; // Independent mode
-    hpwm->Channel = channel;
-    HAL_PWM_Init(hpwm);
+    for(i=2;i<64;i++) psfree(q[i]);
+    heap_walk();
+    free(q);
+    while(1);	// loop forewer
 }
 
 void Error_Handler(void)

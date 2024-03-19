@@ -126,6 +126,7 @@ help:
 	@echo  '  list       - List locally available serial ports'
 	@echo  '  run        - Flash the firmware to the device after compilation'
 	@echo  '               and capture the log output by the device'
+	@echo  '  mon	     - Run serial port monitoring'
 
 lib: .subdirs $(OBJS) $(OLIBS)
 	@cp $(LIBODIR)/libappuser$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
@@ -146,25 +147,28 @@ distclean:clean
 	$(RM) -r $(SDK_TOOLS)/.config.old
 
 run:all
-	@$(WM_TOOL) -c $(DL_PORT) -rs at -ds $(DL_BAUD) -dl $(FIRMWAREDIR)/$(TARGET)/$(TARGET).fls -sl str -ws 115200
+	@$(WM_TOOL) -c $(DL_PORT) -rs rts -ds $(DL_BAUD) -dl $(FIRMWAREDIR)/$(TARGET)/$(TARGET).fls -sl str -ws 115200
 
 monitor:
-	@$(WM_TOOL) -c $(DL_PORT) -sl str -ws 115200
+	@$(WM_TOOL) -c $(DL_PORT) -rs rts -sl str -ws 115200
 
 list:
 	@$(WM_TOOL) -l
 
 down:
-	@$(WM_TOOL) -c $(DL_PORT) -rs at -ds $(DL_BAUD) -dl $(FIRMWAREDIR)/$(TARGET)/$(TARGET).fls
+	@$(WM_TOOL) -c $(DL_PORT) -rs rts -ds $(DL_BAUD) -dl $(FIRMWAREDIR)/$(TARGET)/$(TARGET).fls
 
 image:all
-	@$(WM_TOOL) -c $(DL_PORT) -rs at -ds $(DL_BAUD) -dl $(FIRMWAREDIR)/$(TARGET)/$(TARGET).img
+	@$(WM_TOOL) -c $(DL_PORT) -rs rts -ds $(DL_BAUD) -dl $(FIRMWAREDIR)/$(TARGET)/$(TARGET).img
 
 flash:all
-	@$(WM_TOOL) -c $(DL_PORT) -rs at -ds $(DL_BAUD) -dl $(FIRMWAREDIR)/$(TARGET)/$(TARGET).fls
+	@$(WM_TOOL) -c $(DL_PORT) -rs rts -ds $(DL_BAUD) -dl $(FIRMWAREDIR)/$(TARGET)/$(TARGET).fls
 
 erase:
-	@$(WM_TOOL) -c $(DL_PORT) -rs at -eo all
+	@$(WM_TOOL) -c $(DL_PORT) -rs rts -eo all
+
+mon:
+	pyserial-miniterm --rts 0 /dev/$(DL_PORT) 115200
 
 .subdirs:
 	@set -e; $(foreach d, $(SUBDIRS), $(MAKE) -C $(d);)
