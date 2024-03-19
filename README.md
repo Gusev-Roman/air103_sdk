@@ -2,7 +2,11 @@
 
 # About 
 
-A SDK for WinnerMicro MCU W806.
+A SDK for WinnerMicro MCU W806 and Air103 microcontroller board.
+
+![Air103 pinout](air103_evb_pinout.png?raw=true "Pinout")
+The Air103 board is better than the W806 board and contains the same MCU.
+One advantage of this board is place for PSRAM chip [APS6404 or compatible] on its backside.
 
 # File Structure
 
