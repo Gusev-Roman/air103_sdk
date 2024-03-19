@@ -22,30 +22,11 @@ wm-sdk-w806
 # For Linux Users
 
 ## Download Toolchains
-
-* https://occ.t-head.cn/community/download
-* You need to register an account for download
-* 导航->工具->工具链-800系列->(For now, it is V3.10.29)
-* Download according to your OS version, e.g. for Ubuntu20.04, download csky-elfabiv2-tools-x86_64-minilibc-yyyymmdd.tar.gz
-* Alternative download links
-   * https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
-   * http://82.157.145.101/download/toolkits/winnermicro/w806/
-   * https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=csky-toolchain-bin (links in `source`)
-
+```
+git clone https://github.com/droppingy/hlk-w80x-toolchain.git
+```
 ## Installation
-
-Extract the toolchains to proper folder -- be careful that the tar ball use `./` as top level path, move it to a seperate folder or specify a target folder for the uncompressing.
-```bash
-mkdir csky-elfabiv2-tools-x86_64-minilibc-20210423
-tar xvf csky-elfabiv2-tools-x86_64-minilibc-20210423.tar.gz  -C csky-elfabiv2-tools-x86_64-minilibc-20210423/
-```
-Then move it to somewhere, e.g. /opt/toolchains, set it read-only to normal users
-```bash
-cd /opt/toolchains/
-sudo mv ~/Download/csky-elfabiv2-tools-x86_64-minilibc-20210423/ .
-sudo chown -R root:root csky-elfabiv2-tools-x86_64-minilibc-20210423/
-```
-You don't need to add it to the system PATH variable.
+just type path of BIN in config utility of SDK
 
 ## Building
 
@@ -62,7 +43,7 @@ make menuconfig
 
 In menuconfig, navigate to `Toolchain Configuration`, In the second line "the toolchain path", input the absolute path of the toolchains executables, e.g.
 ```
-/opt/toolchains/csky-elfabiv2-tools-x86_64-minilibc-20210423/bin/
+/path-to-toolchain/bin/
 ```
 Leave other settings unchanged, save and exit menuconfig.
 
