@@ -311,9 +311,15 @@
       <File Name="../../../../../../../app/src/wm_it.c">
         <FileOption/>
       </File>
+      <File Name="../../../../../../../app/src/psalloc.c">
+        <FileOption/>
+      </File>
     </VirtualDirectory>
     <VirtualDirectory Name="inc">
       <File Name="../../../../../../../app/inc/wm_it.h">
+        <FileOption/>
+      </File>
+      <File Name="../../../../../../../app/inc/psalloc.h">
         <FileOption/>
       </File>
     </VirtualDirectory>
@@ -547,7 +553,7 @@
         <SoftResetVal/>
         <External>yes</External>
         <Command>$(ProjectPath)/../../../../../wm_tool.exe</Command>
-        <Arguments>-rs at -ds 2M -dl $(ProjectPath)/../../../../../../../bin/W806/W806.fls -c COM13</Arguments>
+        <Arguments>-rs rts -ds 2M -dl $(ProjectPath)/../../../../../../../bin/W806/W806.fls -c COM10</Arguments>
       </Flash>
     </BuildConfig>
   </BuildConfigs>
