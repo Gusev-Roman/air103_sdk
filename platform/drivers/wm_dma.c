@@ -250,7 +250,7 @@ HAL_StatusTypeDef HAL_DMA_Abort_IT(DMA_HandleTypeDef *hdma)
   * @param  hdma:    pointer to a DMA_HandleTypeDef structure that contains
   *                  the configuration information for the specified DMA Channel.
   * @param  CompleteLevel: Specifies the DMA level complete.
-  * @param  Timeout:       Timeout duration.
+  * @param  Timeout:       Timeout duration (ms).
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, HAL_DMA_LevelCompleteTypeDef CompleteLevel, uint32_t Timeout)

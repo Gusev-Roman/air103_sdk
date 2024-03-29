@@ -12,22 +12,23 @@
 ******************************************************************************/
 
 #include <stdio.h>
-#include "wm_hal.h"
+#include <wm_hal.h>
 #include "wm_psram.h"
 #include "psalloc.h"
 
+void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
+
 PSRAM_HandleTypeDef _psram;
-DMA_HandleTypeDef hdma_ram_tx;
-static DMA_LinkDescriptor tx_desc[2];
+//static DMA_LinkDescriptor tx_desc[2];
 
 int i, j;
 
 void Error_Handler(void);
 // flash-linked const
-static char *fish = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+const char * const _fish = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 DMA_HandleTypeDef hdma_ram_tx;
-DMA_HandleTypeDef hdma_ram_rx;
 
+/*
 static void DMA_Init(void)
 {
     __HAL_RCC_DMA_CLK_ENABLE();
@@ -38,11 +39,13 @@ static void DMA_Init(void)
     HAL_NVIC_SetPriority(DMA_Channel1_IRQn, 0);
     HAL_NVIC_EnableIRQ(DMA_Channel1_IRQn);
 }
+*/
 
 int main(void)
 {
     TIM_HandleTypeDef my_tim;
-    uint32_t ticks0, ticks1;
+    uint32_t ticks0, ticks1, ticks2, ticks3, ticks4;
+    HAL_StatusTypeDef stat;
     char *membuf1, *membuf2;
 
     SystemClock_Config(CPU_CLK_240M);
@@ -93,7 +96,8 @@ int main(void)
     printf("mem2psram @64k is %dus\n", ticks1-ticks0);
     printf("Calculated value is %3.3f MB/s\n", 1000000.0/((ticks1-ticks0)*16));
 
-    DMA_Init();
+    
+/*    DMA_Init();
 
     hdma_ram_tx.Instance = DMA_Channel0;
     hdma_ram_tx.Init.Direction = DMA_MEMORY_TO_MEMORY;
@@ -101,7 +105,7 @@ int main(void)
     hdma_ram_tx.Init.SrcInc = DMA_SINC_ENABLE;
     hdma_ram_tx.Init.DataAlignment = DMA_DATAALIGN_WORD;
     hdma_ram_tx.Init.Mode = DMA_MODE_NORMAL_SINGLE;
-    hdma_ram_tx.Init.RequestSourceSel = 0; // ???
+    //hdma_ram_tx.Init.RequestSourceSel = 0; // ???
 
     hdma_ram_tx.LinkDesc = tx_desc;	// ???
 
@@ -110,32 +114,39 @@ int main(void)
         Error_Handler();
     }
     //__HAL_LINKDMA(hi2s, hdmatx, hdma_i2s_tx);
+*/
+    HAL_DMA_MspInit(&hdma_ram_tx);
     memset(membuf1, '5', 0x10000);
-    HAL_DMA_Start(&hdma_ram_tx, (uint32_t)membuf1, (uint32_t)psblock, 0x8000); // 32 kWords (???) '5' to psblock
+    ticks0 = TIM->TIM0_CNT;
+    HAL_DMA_Start(&hdma_ram_tx, (uint32_t)membuf1, (uint32_t)psblock, 0x8000); // 32 kB '5' to psblock
+    ticks1 = TIM->TIM0_CNT;
+    stat = HAL_DMA_PollForTransfer(&hdma_ram_tx, HAL_DMA_FULL_TRANSFER, 2000);
+    if(stat != HAL_OK) {
+        printf("DMA Error #%d, %d\n", stat, hdma_ram_tx.ErrorCode);
+        Error_Handler();
+    }
+    ticks2 = TIM->TIM0_CNT;
+    HAL_DMA_Start(&hdma_ram_tx, (uint32_t)membuf1+0x8000, (uint32_t)psblock+0x8000, 0x8000); // Next 32kB to psblock
+    ticks3 = TIM->TIM0_CNT;
+    stat = HAL_DMA_PollForTransfer(&hdma_ram_tx, HAL_DMA_FULL_TRANSFER, 1000);
+    if(stat!= HAL_OK){
+        printf("DMA Error #%d, %d\n", stat, hdma_ram_tx.ErrorCode);
+        Error_Handler();
+    }
+    ticks4 = TIM->TIM0_CNT;
+    printf("DMA Transfer OK in %d (%d+%d+%d+%d) us!\n", ticks4-ticks0, ticks1-ticks0, ticks2-ticks1, ticks3-ticks2, ticks4-ticks3);
+    printf("Last byte: %x\n", psblock[0xFFFF]);
+    printf("Mid byte: %x\n", psblock[0x7FFF]);
 
-    if(HAL_OK == HAL_DMA_PollForTransfer(&hdma_ram_tx, HAL_DMA_FULL_TRANSFER, 2000)) { // timeout in ms?
-        //HAL_DMA_Start(&hdma_ram_tx, (uint32_t)membuf1+0x8000, (uint32_t)psblock+0x8000, 0x8000);
-        //if(HAL_DMA_PollForTransfer(&hdma_ram_tx, HAL_DMA_FULL_TRANSFER, 1000) == HAL_OK){
-            printf("DMA Transfer OK!\n");
-            printf("Last byte: %x\n", psblock[0x7FFF]);
-            printf("Next byte: %x\n", psblock[0x8000]);
-        //}
-        //else{
-        //    printf("Error: HAL_DMA_PollForTransfer(2)\n");
-        //}
-    }
-    else{
-        printf("Error: HAL_DMA_PollForTransfer(1)\n");
-    }
     char **q = malloc(64 * sizeof(char *));		// array of 64 char * in regular RAM
     for(i=0; i<64; i++){
-        q[i] = (char *)psalloc(strlen(fish)+1);
+        q[i] = (char *)psalloc(strlen(_fish)+1);
         if(!q){
             printf("psalloc error!\n");
             continue;
         }
         else{
-            strcpy(q[i], fish);
+            strcpy(q[i], _fish);
             heap_walk();
             printf("q[%d]=[%s]\n", i, q[i]);
         }
@@ -145,14 +156,6 @@ int main(void)
     heap_walk();
     free(q);
     while(1);	// loop forewer
-}
-
-void Error_Handler(void)
-{
-    printf("Critical error!\n");
-    while (1)
-    {
-    }
 }
 
 void assert_failed(uint8_t *file, uint32_t line)
