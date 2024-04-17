@@ -8,7 +8,7 @@
 #include <wm_psram.h>
 #include "psalloc.h"
 
-void* _first_chunk;
+void* _first_chunk = NULL;
 void* _free_area;
 void* _heap;
 static const size_t _heap_sz = 1024 * 1024 / 2;    // 8 Mb chip used (in 16-b chunks)
@@ -130,6 +130,8 @@ void* psalloc(size_t bytes) {
 
     MCB* curr;
     size_t para_sz = (bytes >> 4);
+
+    if(!_first_chunk) init_heap();      // first alloc
     if (bytes % 16) para_sz++;
     if (para_sz > _heap_sz) {
         printf("psalloc:Error:%d > %d\n", para_sz, _heap_sz); // запрос превышает даже весь heap
@@ -158,7 +160,9 @@ void* psalloc(size_t bytes) {
     }
     return (void*)(curr + 1);  // point to user area
 }
-
+void *pscalloc(size_t nmemb, size_t lsize) {
+    return psalloc(nmemb*lsize);
+}
 // Coalescence to next
 // chunk: chunk ptr that must be freed
 int coalescence(MCB* chunk) {

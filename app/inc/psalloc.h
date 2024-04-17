@@ -19,14 +19,14 @@ typedef struct _tinymcb MCB;
 
 // ----- main functions
 void* psalloc(size_t bytes);
+extern void *pscalloc(size_t nmemb, size_t lsize);
 void* psrealloc(void* in, size_t bytes);
 void psfree(void* memo);
-// ---- initialization
-void init_heap();
 // ---- integrity diagnostics
 bool isHeap(void *mem);
 void heap_walk();
 // ---- private functions
+void init_heap();
 uint8_t mem_split(MCB* chunk, size_t reqd);
 MCB* find_sized_chunk(size_t sz);
 int coalescence(MCB* chunk);

@@ -25,7 +25,7 @@ int i, j;
 
 void Error_Handler(void);
 // flash-linked const
-const char * const _fish = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+const char _fish[] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 DMA_HandleTypeDef hdma_ram_tx;
 
 /*
@@ -81,8 +81,6 @@ int main(void)
 
     HAL_PSRAM_Init(&_psram);
 
-    init_heap(); // PSRAM alloc init
-
     char *psblock = psalloc(0x10000);
     if(psblock == NULL){
        printf("psalloc error!\n");
@@ -96,25 +94,6 @@ int main(void)
     printf("mem2psram @64k is %dus\n", ticks1-ticks0);
     printf("Calculated value is %3.3f MB/s\n", 1000000.0/((ticks1-ticks0)*16));
 
-    
-/*    DMA_Init();
-
-    hdma_ram_tx.Instance = DMA_Channel0;
-    hdma_ram_tx.Init.Direction = DMA_MEMORY_TO_MEMORY;
-    hdma_ram_tx.Init.DestInc = DMA_DINC_ENABLE;
-    hdma_ram_tx.Init.SrcInc = DMA_SINC_ENABLE;
-    hdma_ram_tx.Init.DataAlignment = DMA_DATAALIGN_WORD;
-    hdma_ram_tx.Init.Mode = DMA_MODE_NORMAL_SINGLE;
-    //hdma_ram_tx.Init.RequestSourceSel = 0; // ???
-
-    hdma_ram_tx.LinkDesc = tx_desc;	// ???
-
-    if (HAL_DMA_Init(&hdma_ram_tx) != HAL_OK)
-    {
-        Error_Handler();
-    }
-    //__HAL_LINKDMA(hi2s, hdmatx, hdma_i2s_tx);
-*/
     HAL_DMA_MspInit(&hdma_ram_tx);
     memset(membuf1, '5', 0x10000);
     ticks0 = TIM->TIM0_CNT;
