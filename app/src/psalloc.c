@@ -301,6 +301,7 @@ int _heapwalk(_HEAPINFO *_EntryInfo){
     if(curr->_tag == 'Z'){
         _EntryInfo->_size = curr->_sz;
         _EntryInfo->_useflag = _FREEENTRY;
+        return _HEAPEND; // Z-tag reached
     }
     else if(curr->_tag == 'M'){			// it CAN be free as well
         _EntryInfo->_size = curr->_sz;

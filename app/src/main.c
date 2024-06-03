@@ -55,6 +55,11 @@ void heapdump(void)
                hinfo._pentry, hinfo._size);		/* _pentry должен содержать актуальный адрес блока, а не тот, который следует за ним */
         numLoops++;
     }
+    if(heapstatus == _HEAPEND) printf("_HEAPEND\n");
+    else if(heapstatus == _HEAPEMPTY) printf("_HEAPEMPTY\n");
+    else if(heapstatus == _HEAPBADNODE) printf("_HEAPBADNODE\n");
+    else if(heapstatus == _HEAPBADBEGIN) printf("_HEAPBADBEGIN\n");
+    // _HEAPBADPTR - The _pentry field of the _HEAPINFO structure doesn't contain a valid pointer into the heap or entryinfo is a null pointer.
 }
 
 int main(void)
@@ -134,6 +139,7 @@ int main(void)
     printf("Mid byte: %x\n", psblock[0x7FFF]);
 
     char **q = malloc(64 * sizeof(char *));		// array of 64 char * in regular RAM
+/*
     for(i=0; i<64; i++){
         q[i] = (char *)psalloc(strlen(_fish)+1);
         if(!q){
@@ -149,8 +155,11 @@ int main(void)
         HAL_Delay(1000);        // 1s delay
     }
     for(i=2;i<64;i++) psfree(q[i]);
-    heapdump();
+*/
+//    psfree(psblock);
+    heapdump();		// проверить выдачу если буфер высвобожден
     free(q);
+
     while(1);	// loop forewer
 }
 
