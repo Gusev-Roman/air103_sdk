@@ -163,8 +163,11 @@ void* psalloc(size_t bytes) {
 void *pscalloc(size_t nmemb, size_t lsize) {
     return psalloc(nmemb*lsize);
 }
+/*
 // Coalescence to next
 // chunk: chunk ptr that must be freed
+ * TODO: рекурсия не нужна, если чекаем в обе стороны
+ */
 int coalescence(MCB* chunk) {
 
     if (chunk) {
@@ -178,8 +181,8 @@ int coalescence(MCB* chunk) {
             if (chunk->next) chunk->next->prev = chunk;
             return 1;
         }
-	// check for prev=NULL
-	else if(chunk->prev && (chunk->prev->_flag == 0)){	// join backward
+    // check for prev=NULL
+    else if(chunk->prev && (chunk->prev->_flag == 0)){	// join backward
 #ifdef DEBUG
 	    printf("join with previous chunk");
 #endif
@@ -227,7 +230,9 @@ void psfree(void* memo) {
         puts("not in range, heap corrupted?");
     }
 }
-
+/*
+ * учесть in = NULL, bytes = 0 и уменьшение размера
+ */
 void* psrealloc(void* in, size_t bytes) {
     MCB* old = (MCB*)in;
     old--;
@@ -262,3 +267,75 @@ void heap_walk() {
 exit:
     puts("...stop!");
 }
+
+/*
+ * Если _pentry = NULL, изучаем первый чанк
+ * иначе изучаем текущий и 
+ * - сдвигаем _pentry на следующий
+ */
+int _heapwalk(_HEAPINFO *_EntryInfo){
+    MCB* curr;
+    
+    if(!_EntryInfo->_pentry){   // is NULL, first entry
+        if(!_first_chunk) return _HEAPBADBEGIN;
+        // now check _first_chunk for PSRAM area
+        if((_first_chunk < PSRAM_ADDR_START) || (_first_chunk > PSRAM_ADDR_START + PSRAM_SIZE))
+            return _HEAPBADBEGIN;
+        curr = (MCB*)_first_chunk;
+        if(curr->_tag == 'Z') return _HEAPEMPTY;
+        if(curr->_tag == 'M'){
+            // go to next element
+            _EntryInfo->_pentry = curr->next;
+            _EntryInfo->_size = curr->_sz;
+            if(curr->_tag == 'M') _EntryInfo->_useflag = _USEDENTRY;
+            else if(curr->_tag == 'Z') _EntryInfo->_useflag = _FREEENTRY;
+            else return _HEAPBADNODE; // NOT M and NOT Z
+        }
+    }
+    // study current _pentry
+    curr = _EntryInfo->_pentry;
+    if(curr->_tag == 'M'){
+        _EntryInfo->_size = curr->_sz;
+        _EntryInfo->_useflag = (curr->_flag == 0) ? _FREEENTRY : _USEDENTRY;
+    }
+    return _HEAPEMPTY;
+}
+
+
+/*
+void heapdump(void)
+{
+    _HEAPINFO hinfo;
+    int heapstatus;
+    int numLoops;
+    hinfo._pentry = NULL;
+    numLoops = 0;
+    while((heapstatus = _heapwalk(&hinfo)) == _HEAPOK &&
+          numLoops < 100)
+    {
+        printf("%8s block at %Fp of size %4.4X\n",
+               (hinfo._useflag == _USEDENTRY ? "USED" : "FREE"),
+               hinfo._pentry, hinfo._size);
+        numLoops++;
+    }
+
+    switch(heapstatus)
+    {
+    case _HEAPEMPTY:
+        printf("OK - empty heap\n");
+        break;
+    case _HEAPEND:
+        printf("OK - end of heap\n");
+        break;
+    case _HEAPBADPTR:
+        printf("ERROR - bad pointer to heap\n");
+        break;
+    case _HEAPBADBEGIN:
+        printf("ERROR - bad start of heap\n");
+        break;
+    case _HEAPBADNODE:
+        printf("ERROR - bad node in heap\n");
+        break;
+    }
+}
+*/

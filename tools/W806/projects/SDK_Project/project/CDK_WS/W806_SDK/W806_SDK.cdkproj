@@ -311,6 +311,12 @@
       <File Name="../../../../../../../app/src/wm_it.c">
         <FileOption/>
       </File>
+      <File Name="../../../../../../../app/src/ascii_fonts.c" ExcludeProjConfig="BuildSet">
+        <FileOption/>
+      </File>
+      <File Name="../../../../../../../app/src/ssd1306.c" ExcludeProjConfig="BuildSet">
+        <FileOption/>
+      </File>
       <File Name="../../../../../../../app/src/psalloc.c">
         <FileOption/>
       </File>

@@ -40,6 +40,22 @@ static void DMA_Init(void)
     HAL_NVIC_EnableIRQ(DMA_Channel1_IRQn);
 }
 */
+void heapdump(void)
+{
+    _HEAPINFO hinfo;
+    int heapstatus;
+    int numLoops;
+    hinfo._pentry = NULL;
+    numLoops = 0;
+    while((heapstatus = _heapwalk(&hinfo)) == _HEAPOK &&
+          numLoops < 100)
+    {
+        printf("%8s block at %p of size %4.4X\n",
+               (hinfo._useflag == _USEDENTRY ? "USED" : "FREE"),
+               hinfo._pentry, hinfo._size);
+        numLoops++;
+    }
+}
 
 int main(void)
 {
@@ -47,7 +63,7 @@ int main(void)
     uint32_t ticks0, ticks1, ticks2, ticks3, ticks4;
     HAL_StatusTypeDef stat;
     char *membuf1, *membuf2;
-
+    
     SystemClock_Config(CPU_CLK_240M);
     printf("enter main\r\n");
 
@@ -76,7 +92,7 @@ int main(void)
     memcpy(membuf1, membuf2, 0x10000); // 'A' to membuf1
     ticks1 = TIM->TIM0_CNT;
 
-    printf("mem2mem @64k is %dus\n", ticks1-ticks0);
+    printf("mem2mem @64k is %uus\n", ticks1-ticks0);
     printf("Calculated value is %3.3f MB/s\n", 1000000.0/((ticks1-ticks0)*16)); // 64-128-256-512-1024
 
     HAL_PSRAM_Init(&_psram);
@@ -113,7 +129,7 @@ int main(void)
         Error_Handler();
     }
     ticks4 = TIM->TIM0_CNT;
-    printf("DMA Transfer OK in %d (%d+%d+%d+%d) us!\n", ticks4-ticks0, ticks1-ticks0, ticks2-ticks1, ticks3-ticks2, ticks4-ticks3);
+    printf("DMA Transfer OK in %d (%u+%u+%u+%u) us!\n", ticks4-ticks0, ticks1-ticks0, ticks2-ticks1, ticks3-ticks2, ticks4-ticks3);
     printf("Last byte: %x\n", psblock[0xFFFF]);
     printf("Mid byte: %x\n", psblock[0x7FFF]);
 
@@ -126,7 +142,8 @@ int main(void)
         }
         else{
             strcpy(q[i], _fish);
-            heap_walk();
+            //heap_walk();
+            heapdump();
             printf("q[%d]=[%s]\n", i, q[i]);
         }
         HAL_Delay(1000);        // 1s delay

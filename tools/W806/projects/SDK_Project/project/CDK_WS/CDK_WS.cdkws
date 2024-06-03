@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CDK_Workspace Name="CDK_WS" Database="">
-  <Project Name="W806_SDK" Path="W806_SDK/W806_SDK.cdkproj" Active="Yes"/>
+  <Project Name="W806_SDK" Path="W806_SDK/W806_SDK.cdkproj" RootPath="" Active="Yes"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
       <Environment/>
