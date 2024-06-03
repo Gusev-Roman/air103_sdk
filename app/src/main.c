@@ -52,7 +52,7 @@ void heapdump(void)
     {
         printf("%8s block at %p of size %4.4X\n",
                (hinfo._useflag == _USEDENTRY ? "USED" : "FREE"),
-               hinfo._pentry, hinfo._size);
+               hinfo._pentry, hinfo._size);		/* _pentry должен содержать актуальный адрес блока, а не тот, который следует за ним */
         numLoops++;
     }
 }
@@ -63,7 +63,7 @@ int main(void)
     uint32_t ticks0, ticks1, ticks2, ticks3, ticks4;
     HAL_StatusTypeDef stat;
     char *membuf1, *membuf2;
-    
+
     SystemClock_Config(CPU_CLK_240M);
     printf("enter main\r\n");
 
@@ -149,7 +149,7 @@ int main(void)
         HAL_Delay(1000);        // 1s delay
     }
     for(i=2;i<64;i++) psfree(q[i]);
-    heap_walk();
+    heapdump();
     free(q);
     while(1);	// loop forewer
 }
