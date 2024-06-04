@@ -140,7 +140,7 @@ int main(void)
 
     char **q = malloc(64 * sizeof(char *));		// array of 64 char * in regular RAM
 /*
-    for(i=0; i<64; i++){
+    for(i=0; i<5; i++){
         q[i] = (char *)psalloc(strlen(_fish)+1);
         if(!q){
             printf("psalloc error!\n");
@@ -148,14 +148,20 @@ int main(void)
         }
         else{
             strcpy(q[i], _fish);
-            //heap_walk();
             heapdump();
             printf("q[%d]=[%s]\n", i, q[i]);
         }
         HAL_Delay(1000);        // 1s delay
     }
-    for(i=2;i<64;i++) psfree(q[i]);
+    for(i=0;i<5;i++) psfree(q[i]);
 */
+    q[0] = (char *)psalloc(strlen(_fish)+1);
+    q[1] = (char *)psalloc(strlen(_fish)+1);
+    heapdump();
+    psfree(q[0]);   // блок остается M(0)
+    heapdump();
+    psfree(q[1]);   // блок уходит в Z, но предыдущий с ним не коалесцирует
+
 //    psfree(psblock);
     heapdump();		// проверить выдачу если буфер высвобожден
     free(q);

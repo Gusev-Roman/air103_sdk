@@ -200,6 +200,7 @@ int coalescence(MCB* chunk) {
 
 // free block from PSRAM
 // TODO: why coalescence() not run? - we need backward check!
+// Сначала сделать проверку blk->prev элемента! Если свободен - коалесцировать с ним, затем проверить next
 void psfree(void* memo) {
     MCB* blk = (MCB*)memo;
     blk--;  // point to MCB
@@ -275,36 +276,36 @@ exit:
 int _heapwalk(_HEAPINFO *_EntryInfo){
     MCB* curr;
 
+    if(!_EntryInfo) return _HEAPBADPTR;
+    
     if(!_EntryInfo->_pentry){   // is NULL, check first entry
         if(!_first_chunk) return _HEAPBADBEGIN;
         // now check _first_chunk for PSRAM area
-        if((_first_chunk < PSRAM_ADDR_START) || (_first_chunk > PSRAM_ADDR_START + PSRAM_SIZE))
+        if((_first_chunk < (void *)PSRAM_ADDR_START) || (_first_chunk > (void *)PSRAM_ADDR_START + PSRAM_SIZE))
             return _HEAPBADBEGIN;
         curr = (MCB*)_first_chunk;
         _EntryInfo->_pentry = _first_chunk;
         if(curr->_tag == 'Z') return _HEAPEMPTY;
-        if(curr->_tag == 'M'){	 		// chunk is used, report it!
-            // go to next element
-            //_EntryInfo->_pentry = curr->next;
-            _EntryInfo->_size = curr->_sz;
+        if(curr->_tag == 'M'){
+            _EntryInfo->_size = curr->_sz * 16;
             _EntryInfo->_useflag = (curr->_flag == 0) ? _FREEENTRY : _USEDENTRY;
             return _HEAPOK;
         }
     }
     // study NEXT entry (if valid)
-    if(_EntryInfo->_pentry < PSRAM_ADDR_START) return _HEAPBADNODE;
-    if(_EntryInfo->_pentry > (PSRAM_ADDR_START + PSRAM_SIZE)) return _HEAPBADNODE;
+    if((_EntryInfo->_pentry < (int *)PSRAM_ADDR_START|| (_EntryInfo->_pentry > ((int *)PSRAM_ADDR_START + PSRAM_SIZE))))
+        return _HEAPBADPTR;
 
     curr = (MCB *)_EntryInfo->_pentry;
-    _EntryInfo->_pentry = curr->next;  // check next chunk
+    _EntryInfo->_pentry = (int *)curr->next;  // check next chunk
     curr = curr->next;
     if(curr->_tag == 'Z'){
-        _EntryInfo->_size = curr->_sz;
+        _EntryInfo->_size = curr->_sz * 16;
         _EntryInfo->_useflag = _FREEENTRY;
         return _HEAPEND; // Z-tag reached
     }
-    else if(curr->_tag == 'M'){			// it CAN be free as well
-        _EntryInfo->_size = curr->_sz;
+    else if(curr->_tag == 'M'){
+        _EntryInfo->_size = curr->_sz * 16;
         _EntryInfo->_useflag = (curr->_flag == 0) ? _FREEENTRY : _USEDENTRY;
     }
     else return _HEAPBADNODE; // tag is not M or Z
