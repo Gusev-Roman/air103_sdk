@@ -52,11 +52,17 @@ void heapdump(void)
     {
         printf("%8s block at %p of size %4.4X\n",
                (hinfo._useflag == _USEDENTRY ? "USED" : "FREE"),
-               hinfo._pentry, hinfo._size);		/* _pentry должен содержать актуальный адрес блока, а не тот, который следует за ним */
+               hinfo._pentry, hinfo._size);	/* _pentry must contains an actual PTR */
         numLoops++;
     }
-    if(heapstatus == _HEAPEND) printf("_HEAPEND\n");
-    else if(heapstatus == _HEAPEMPTY) printf("_HEAPEMPTY\n");
+    if(heapstatus == _HEAPEND) {
+        printf("    FINAL block at %p of size %4.4X\n",
+               hinfo._pentry, hinfo._size);
+    }
+    else if(heapstatus == _HEAPEMPTY) {
+        printf("    FINAL block at %p of size %4.4X\n",
+               hinfo._pentry, hinfo._size);
+    }
     else if(heapstatus == _HEAPBADNODE) printf("_HEAPBADNODE\n");
     else if(heapstatus == _HEAPBADBEGIN) printf("_HEAPBADBEGIN\n");
     // _HEAPBADPTR - The _pentry field of the _HEAPINFO structure doesn't contain a valid pointer into the heap or entryinfo is a null pointer.
@@ -103,10 +109,11 @@ int main(void)
     HAL_PSRAM_Init(&_psram);
 
     char *psblock = psalloc(0x10000);
-    if(psblock == NULL){
+    if(psblock == NULL){		// how to detect PSRAM presence?
        printf("psalloc error!\n");
        while(1);
     }
+    heapdump(); // show current free size
     //memset(psblock, 'R', 0x10000);
     ticks0 = TIM->TIM0_CNT;
     memcpy(psblock, membuf1, 0x10000);	// 'A' to psblock
@@ -139,7 +146,7 @@ int main(void)
     printf("Mid byte: %x\n", psblock[0x7FFF]);
 
     char **q = malloc(64 * sizeof(char *));		// array of 64 char * in regular RAM
-/*
+
     for(i=0; i<5; i++){
         q[i] = (char *)psalloc(strlen(_fish)+1);
         if(!q){
@@ -154,16 +161,12 @@ int main(void)
         HAL_Delay(1000);        // 1s delay
     }
     for(i=0;i<5;i++) psfree(q[i]);
-*/
-    q[0] = (char *)psalloc(strlen(_fish)+1);
-    q[1] = (char *)psalloc(strlen(_fish)+1);
-    heapdump();
-    psfree(q[0]);   // блок остается M(0)
-    heapdump();
-    psfree(q[1]);   // блок уходит в Z, но предыдущий с ним не коалесцирует
 
-//    psfree(psblock);
-    heapdump();		// проверить выдачу если буфер высвобожден
+    heapdump();
+    printf("Freeing big block...\n");
+    psfree(psblock);
+    printf("Now heap MUST be totally empty!\n");
+    heapdump();
     free(q);
 
     while(1);	// loop forewer

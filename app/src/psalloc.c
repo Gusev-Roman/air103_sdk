@@ -16,23 +16,22 @@ size_t _free_sz;
 
 MCB* _last_chunk;
 
-/**
-* Проверка указателя на диапазон памяти, назначенный для heap
-* при записи в память большего количества байт, чем выделено, заголовок следующего блока может быть поврежден
-* при попытке проследовать по поврежденному указателю получим неопределенное поведение
-* поэтому перед обращениями к указателям крайне желательно проверять их валидность
-*/
+/*
+ * PTR checking is very recommended option!
+ */
 bool isHeap(void *mem) {
     if ((mem >= _first_chunk) && (mem < (void *)((uint32_t)_first_chunk + (_heap_sz << 4))))
         return true;
     return false;
 }
-// TODO: make Z-record with full memory alloc'd
+// make Z-record with full memory alloc'd
 void init_heap() {
     MCB* zfree;
     _heap = (void *)PSRAM_ADDR_START;
     if (!_heap) {
-        puts("init_heap error: not enough memory!");
+#ifdef DEBUG    
+        printf("%s: error: not enough memory!", __FUNCTION__);
+#endif        
         return;
     }
     zfree = (MCB*)_heap;
@@ -46,7 +45,9 @@ void init_heap() {
     // TODO: delete this!
     _free_area = _heap;
     _free_sz = _heap_sz;
-    printf("Heap is %p, %X\n", _heap, _heap_sz << 4);
+#ifdef DEBUG    
+    printf("%s:Heap is %p, %X\n", __FUNCTION__, _heap, _heap_sz << 4);
+#endif
 }
 
 // check chunk space, if match - split it, if not - return 0
@@ -72,13 +73,16 @@ uint8_t mem_split(MCB* chunk, size_t reqd) {
     // else - take full chunk
     return 1;
 }
-// TODO: find empty chunk and split
+
+/*  find empty chunk and split
+ *
+ */
 MCB* find_sized_chunk(size_t sz) {
     MCB* curr;
 
-    // пробежимся по цепочке (включая Z, который всегда свободен)
-    // если чанк свободен, проверить его размер. 
-    // если тег неизвестен, сообщить об ошибке
+    // scan MCB-chain (including Z-block, always free)
+    // if chunk is free, compare its size with sz
+    // if tag is not MZ, report error
 
     if (_first_chunk) { // first is not empty
         curr = (MCB*)_first_chunk;
@@ -89,7 +93,7 @@ MCB* find_sized_chunk(size_t sz) {
                 return curr;   // found a hole...
             }
 
-            if (isHeap(curr->next)) curr = curr->next;      // TODO: check next for heap area!
+            if (isHeap(curr->next)) curr = curr->next;
             else {
                 puts("Error: next is corrupted!");
                 return NULL;
@@ -101,10 +105,10 @@ MCB* find_sized_chunk(size_t sz) {
         }
         else {
             if ((curr->_flag == 0) && (curr->_sz >= sz)) {
-                mem_split(curr, sz);                // взять чанк из Z-блока
+                mem_split(curr, sz);                // split Z-block
                 return curr;
             }
-            else {  // Z-блок занят, либо в нем не хватает места. Сообщить об ошибке (в вышестоящей процедуре).
+            else {  // Z-block is full, report error.
                 // puts("Error: no memory!");
                 return NULL;
             }
@@ -134,74 +138,69 @@ void* psalloc(size_t bytes) {
     if(!_first_chunk) init_heap();      // first alloc
     if (bytes % 16) para_sz++;
     if (para_sz > _heap_sz) {
-        printf("psalloc:Error:%d > %d\n", para_sz, _heap_sz); // запрос превышает даже весь heap
+#ifdef DEBUG    
+        printf("%s:Error:%d > %d\n", __FUNCTION__, para_sz, _heap_sz); // запрос превышает даже весь heap
+#endif        
         return NULL;
     }
-    curr = find_sized_chunk(para_sz);          // находим чанк соответственного размера
+    curr = find_sized_chunk(para_sz);          // finding match-sized chunk
 #ifdef DEBUG
     printf("find_sized_chunk() returns %p\n", curr);
 #endif
     if (!curr) {
-        printf("psalloc:Error: no memory\n");   // не нашлось непрерывного пространства нужного размера
+#ifdef DEBUG    
+        printf("%s:Error: no memory\n", __FUNCTION__);  // no chunk with given size or bigger
+#endif        
         return NULL;
     }
     //printf("Tag of found area is %c\n", curr->_tag);
 
     curr->_flag = 8;    // mark used
 
-    if (curr->_tag == 'Z') {                // особый случай: выделено все оставшееся место!
-        printf("Z-tag in use!..\n");
+    if (curr->_tag == 'Z') {                   // a special case: all heap is occupied!
+#if defined DEBUG
+        printf("%s:Z-tag in use!..\n", __FUNCTION__);
+#endif        
         curr->_sz = para_sz;
-        //curr->prev = _last_chunk;           // последний блок не может быть предыдущим для какого-либо
-        //curr->next = ((MCB*)(_free_area)) + 1 + para_sz;  // последний не имеет next
         _free_area = curr->next;
-        _last_chunk = curr;     // last but not first
+        _last_chunk = curr;         // last but not first
         _free_sz -= (para_sz + 1);  // space correction
     }
-    return (void*)(curr + 1);  // point to user area
+    return (void*)(curr + 1);       // point to user area
 }
 void *pscalloc(size_t nmemb, size_t lsize) {
     return psalloc(nmemb*lsize);
 }
 /*
-// Coalescence to next
-// chunk: chunk ptr that must be freed
- * TODO: рекурсия не нужна, если чекаем в обе стороны
+ * Coalescence to prevoius or next chunk
+ * @chunk: chunk ptr that must be freed
+ * Note: chunk is already checked for NULL orinvalid PTR
+ * @return zero
  */
 int coalescence(MCB* chunk) {
 
-    if (chunk) {
-        if (chunk->next && (chunk->next->_flag == 0)) {
-            // it can poi!
-            if (chunk->next->_tag == 'M') coalescence(chunk->next);  // recurse it
-
-            chunk->_sz += chunk->next->_sz + 1;     // _sz - размер чанка БЕЗ заголовка! Минимум 1...
-            chunk->_tag = chunk->next->_tag;
-            chunk->next = chunk->next->next;
-            if (chunk->next) chunk->next->prev = chunk;
-            return 1;
-        }
-    // check for prev=NULL
-    else if(chunk->prev && (chunk->prev->_flag == 0)){	// join backward
-#ifdef DEBUG
-	    printf("join with previous chunk");
-#endif
-	    chunk->prev->_sz += chunk->_sz + 1;
-	    chunk->prev->next = chunk->next;
-	    if(chunk->next) chunk->next->prev = chunk->prev;
-	    return 1;
-	}
+    if(chunk->prev && (chunk->prev->_flag == 0)){
+        // prev's tag cannot be 'Z'
+        chunk->prev->_sz += chunk->_sz + 1; // enlarge previous
+        chunk->prev->next = chunk->next;
+        if(chunk->next) chunk->next->prev = chunk->prev;
+        chunk = chunk->prev;	// now it's here...
     }
-    else {
-        puts("coalescence() error: wrong chunk!");
+    // even if previous is joined, checking next...
+    
+    if (chunk->next && (chunk->next->_flag == 0)) { // destroy next chunk
+        chunk->_sz += chunk->next->_sz + 1;     // _sz - chunk size without MCB, in pages
+        chunk->_tag = chunk->next->_tag;
+        chunk->next = chunk->next->next;	// chunk->next->next may be invalid
     }
     return 0;
 }
 
 // free block from PSRAM
-// TODO: why coalescence() not run? - we need backward check!
-// Сначала сделать проверку blk->prev элемента! Если свободен - коалесцировать с ним, затем проверить next
+
 void psfree(void* memo) {
+    if(!memo) return;	// nothing to free
+
     MCB* blk = (MCB*)memo;
     blk--;  // point to MCB
     // first check if block in PSRAM
@@ -210,12 +209,14 @@ void psfree(void* memo) {
         // get link to MCB if BLK not points to 'MZ'
         if (blk->_tag == 'M') {
             if (!blk->_flag) {
-                printf("block %p is not allocated\n", blk);
+#ifdef DEBUG            
+                printf("%s: block %p is not allocated\n", __FUNCTION__, blk);
+#endif                
                 return;
             }
             blk->_flag = 0;            // just mark it freed
             _free_sz += blk->_sz;      // increase _free_sz
-            coalescence(blk);          // join chunk with next one (but next is occupied! maybe try coalescence whth previous?)
+            coalescence(blk);          // join chunk whth previous and/or with next one
         }
         else if (blk->_tag == 'Z') {
             // make prevoius elem 'Z'-elem
@@ -226,25 +227,36 @@ void psfree(void* memo) {
                 _free_sz += blk->next->_sz; // increase space at end
             }
         }
+        else {
+#ifdef DEBUG
+        printf("%s:Wrong tag, heap corrupted?\n", __FUNCTION__);
+#endif
+        }
     }
     else {
-        puts("not in range, heap corrupted?");
+#ifdef DEBUG
+       printf("%s:Not in range, heap corrupted?\n", __FUNCTION__);
+#endif
     }
 }
 /*
- * учесть in = NULL, bytes = 0 и уменьшение размера
+ * TODO: учесть уменьшение размера
  */
 void* psrealloc(void* in, size_t bytes) {
+    if(!in) return psalloc(bytes);
+    if(!bytes) { psfree(in); return NULL; }
+    
     MCB* old = (MCB*)in;
     old--;
     char* re = (char*)psalloc(bytes);
     if (re) {
         memcpy(re, in, (old->_sz) << 4);
-        psfree((MCB*)in);
+        psfree(in);
     }
     return re;
 }
 
+/*
 void heap_walk() {
     MCB* curr;
 
@@ -268,13 +280,17 @@ void heap_walk() {
 exit:
     puts("...stop!");
 }
+*/
 
 /*
- * Если _pentry = NULL, изучаем первый чанк
- * иначе изучаем текущий и сдвигаем _pentry на следующий
+ * microsoft-style heapwalk
+ * @_EntryInfo: PTR to _HEAPINFO struct
+ * if _EntryInfo->_pentry is NULL, analyze first chunk in chain
+ * otherwise analyse current chunk and change _EntryInfo->_pentry to next chunk
  */
 int _heapwalk(_HEAPINFO *_EntryInfo){
     MCB* curr;
+    int retval = _HEAPOK;
 
     if(!_EntryInfo) return _HEAPBADPTR;
     
@@ -285,19 +301,21 @@ int _heapwalk(_HEAPINFO *_EntryInfo){
             return _HEAPBADBEGIN;
         curr = (MCB*)_first_chunk;
         _EntryInfo->_pentry = _first_chunk;
-        if(curr->_tag == 'Z') return _HEAPEMPTY;
-        if(curr->_tag == 'M'){
-            _EntryInfo->_size = curr->_sz * 16;
-            _EntryInfo->_useflag = (curr->_flag == 0) ? _FREEENTRY : _USEDENTRY;
-            return _HEAPOK;
+        _EntryInfo->_size = curr->_sz << 4;
+        _EntryInfo->_useflag = (curr->_flag == 0) ? _FREEENTRY : _USEDENTRY;
+        
+        if(curr->_tag == 'Z'){
+            retval = _HEAPEMPTY;
         }
+        return retval;
     }
+    
     // study NEXT entry (if valid)
     if((_EntryInfo->_pentry < (int *)PSRAM_ADDR_START|| (_EntryInfo->_pentry > ((int *)PSRAM_ADDR_START + PSRAM_SIZE))))
         return _HEAPBADPTR;
 
     curr = (MCB *)_EntryInfo->_pentry;
-    _EntryInfo->_pentry = (int *)curr->next;  // check next chunk
+    _EntryInfo->_pentry = (int *)curr->next;  // check next chunk (MCB area)
     curr = curr->next;
     if(curr->_tag == 'Z'){
         _EntryInfo->_size = curr->_sz * 16;
