@@ -112,8 +112,16 @@ Start serial monitor only
 ```bash
 make monitor
 ```
+Note: Air103 board have a Reset line connected to serial RTS signal (like a W801), so monitoring with wm_tool utility is not possible.
+We need to install python3-pyserial package:
+```bash
+sudo apt-get install python3-pyserial
+```
+and now another monitoring command will works fine:
+```bash
+make mon
+```
 
-<br>
 
 # For Windows Users
 
