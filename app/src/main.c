@@ -19,6 +19,10 @@
 void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
 
 PSRAM_HandleTypeDef _psram;
+#ifndef USE_PSRAM
+//PSRAM_HandleTypeDef _psram;
+#warning PSRAM is not enabled! Please use USE_PSRAM=1 define
+#endif
 //static DMA_LinkDescriptor tx_desc[2];
 
 int i, j;
@@ -77,6 +81,7 @@ int main(void)
 
     SystemClock_Config(CPU_CLK_240M);
     printf("enter main\r\n");
+
 
     _psram.Init.Div = 3; // from 3 to 15 (check APBCLK)
     _psram.Init.Mode = PSRAM_MODE_QSPI;

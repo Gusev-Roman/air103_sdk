@@ -109,4 +109,5 @@ void board_init(void)
     /* use uart1 as log output io */
 	//uart1Init(115200);
 #endif
+// здесь нужно инициализировать PSRAM чтобы работал системный malloc/free
 }
