@@ -23,11 +23,15 @@
 
 #include <csi_config.h>
 #include "csi_core.h"
+//#include <wm_cpu.h>
+//#include "wm_gpio.h"
 
+/*
 #ifdef USE_PSRAM
 #include "wm_psram.h"
 PSRAM_HandleTypeDef __psram;
 #endif
+*/
 /**
   * @brief  initialize the system
   *         Initialize the psr and vbr.
@@ -36,6 +40,10 @@ PSRAM_HandleTypeDef __psram;
   */
 void SystemInit(void)
 {
+// init LED PB24
+//    GPIO_InitTypeDef GPIO_InitStruct = {0};
+//    uint32_t f = 100000000;
+
     __set_VBR((uint32_t) & (irq_vectors));
 
 #if defined(CONFIG_SEPARATE_IRQ_SP) && !defined(CONFIG_KERNEL_NONE)
@@ -55,10 +63,32 @@ void SystemInit(void)
 #ifdef CONFIG_KERNEL_NONE
     __enable_excp_irq();
 #endif
+
+/*
 #ifdef USE_PSRAM
     __psram.Init.Div = 3;
     __psram.Init.Mode = PSRAM_MODE_QSPI;
     __psram.Instance = PSRAM;
-    HAL_PSRAM_Init(&__psram);
+    //HAL_PSRAM_Init(&__psram);
 #endif
+*/
+    //HAL_Delay(50); // такая пауза завешивает проц, попробуем большой цикл...
+    //uint32_t f = 100000000;
+    //while(f > 0) f--;		// 400 ms
+
+    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26, GPIO_PIN_RESET);	// LEDs off
+    //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26);
+/*
+    __HAL_RCC_GPIO_CLK_ENABLE();
+
+    GPIO_InitStruct.Pin = GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26, GPIO_PIN_SET);
+
+    while(f > 0) f--;		// 400 ms
+
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26, GPIO_PIN_RESET);	// LEDs off
+*/
 }
