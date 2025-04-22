@@ -185,7 +185,7 @@ endif
 
 $(OBJODIR)/$(subdir_path)/%.o: %.c
 	@mkdir -p $(OBJODIR)/$(subdir_path)
-	$(CC) $(if $(findstring $<,$(DSRCS)),$(DFLAGS),$(CFLAGS)) $(COPTS_$(*F)) $(INCLUDES) $(CMACRO) -c "$<" -o "$@" -MMD -MD -MF "$(@:$(OBJODIR)/$(subdir_path)/%.o=$(OBJODIR)/$(subdir_path)/%.o.d)" -MT "$(@)"
+	$(CC)  $(if $(findstring $<,$(DSRCS)),$(DFLAGS),$(CFLAGS)) $(COPTS_$(*F)) $(INCLUDES) $(CMACRO) -c "$<" -o "$@" -MMD -MD -MF "$(@:$(OBJODIR)/$(subdir_path)/%.o=$(OBJODIR)/$(subdir_path)/%.o.d)" -MT "$(@)"
 
 $(OBJODIR)/$(subdir_path)/%.o: %.cpp
 	@mkdir -p $(OBJODIR)/$(subdir_path)

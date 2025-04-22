@@ -26,6 +26,7 @@
 #include <csi_core.h>
 #include "wm_regs.h"
 #include "wm_hal.h"
+#include "wm_gpio.h"
 
 #define UART_TXEN_BIT			(0x40)
 #define UART_RXEN_BIT			(0x80)
@@ -98,9 +99,16 @@ static void uart1Init (int bandrate)
 
 }
 #endif
+
+#ifdef USE_PSRAM
+#include "wm_psram.h"
+PSRAM_HandleTypeDef __psram;
+#endif
+
 void board_init(void)
 {
-
+    //uint32_t f = 100000000;
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
 #if USE_UART0_PRINT
     /* use uart0 as log output io */
     uart0Init(115200);
@@ -109,5 +117,27 @@ void board_init(void)
     /* use uart1 as log output io */
 	//uart1Init(115200);
 #endif
-// здесь нужно инициализировать PSRAM чтобы работал системный malloc/free
+    printf("board_init() passed\r\n");
+    __HAL_RCC_GPIO_CLK_ENABLE();
+
+    GPIO_InitStruct.Pin = GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26, GPIO_PIN_SET);
+
+    //while(f > 0) f--;           // 400 ms
+    HAL_Delay(5);
+
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26, GPIO_PIN_RESET);  // LEDs off
+    printf("LEDs blinked\r\n");
+#ifdef USE_PSRAM
+    __psram.Init.Div = 3;
+    __psram.Init.Mode = PSRAM_MODE_QSPI;
+    __psram.Instance = PSRAM;
+    HAL_PSRAM_Init(&__psram);
+    printf("PSRAM init done!\r\n");
+#else
+#error "PSRAM is not init!"
+#endif
 }

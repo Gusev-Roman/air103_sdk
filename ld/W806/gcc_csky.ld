@@ -24,15 +24,9 @@ MEMORY
 {
     I-SRAM : ORIGIN = 0x08010400 , LENGTH = 0xEFC00 /* I-SRAM  1MB */ 
     D-SRAM : ORIGIN = 0x20000100 , LENGTH = 0x47f00   /* D-SRAM  288KB */
-<<<<<<< HEAD
     V-SRAM : ORIGIN = 0x20000000 , LENGTH = 0x100
     P-SRAM : ORIGIN = 0x30000000 , LENGTH = 0x800000  /* off-chip SRAM 8MB */    
-=======
-    V-SRAM : ORIGIN = 0x20000000 , LENGTH = 0x100   /* off-chip SRAM 8MB */
-    P-SRAM : ORIGIN = 0x30000000 , LENGTH = 0x800000
->>>>>>> fdaa40e28eed1eb0ab63ddf6e8ef27ae4d107755
 }
-
 __min_heap_size = 0;
 PROVIDE (__ram_end  = 0x20048000);
 PROVIDE (__heap_end = __ram_end);
@@ -103,16 +97,7 @@ SECTIONS
   . = ALIGN(0x4) ;
   __erodata = .;
  } > REGION_RODATA
-<<<<<<< HEAD
- .pdata : {
-     . = ALIGN(0x4) ;
-     __spdata = .;
-     *(.psram)
-     __epdata = .;
- } > REGION_PSRAM
-=======
 
->>>>>>> fdaa40e28eed1eb0ab63ddf6e8ef27ae4d107755
  .vdata : {
      . = ALIGN(0x4) ;
       __vdata_start__ = . ;
