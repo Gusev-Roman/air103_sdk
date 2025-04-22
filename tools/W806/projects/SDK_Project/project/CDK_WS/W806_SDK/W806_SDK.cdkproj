@@ -449,7 +449,7 @@
         <Tools/>
       </User>
       <Compiler>
-        <Define>GCC_COMPILE=1;TLS_CONFIG_CPU_XT804=1</Define>
+        <Define>GCC_COMPILE=1;TLS_CONFIG_CPU_XT804=1;USE_PSRAM=1</Define>
         <Undefine/>
         <Optim>Optimize more (-O2)</Optim>
         <DebugLevel>Maximum (-g3)</DebugLevel>
@@ -559,7 +559,7 @@
         <SoftResetVal/>
         <External>yes</External>
         <Command>$(ProjectPath)/../../../../../wm_tool.exe</Command>
-        <Arguments>-rs rts -ds 2M -dl $(ProjectPath)/../../../../../../../bin/W806/W806.fls -c COM10</Arguments>
+        <Arguments>-rs rts -ds 2M -dl $(ProjectPath)/../../../../../../../bin/W806/W806.fls -c COM15</Arguments>
       </Flash>
     </BuildConfig>
   </BuildConfigs>
