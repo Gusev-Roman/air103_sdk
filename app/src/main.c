@@ -19,7 +19,7 @@
 void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
 
 #ifndef USE_PSRAM
-#warning "PSRAM is not enabled! define USE_PSRAM!"
+#warning PSRAM is not enabled! Please use USE_PSRAM=1 define
 #endif
 
 int i, j;
