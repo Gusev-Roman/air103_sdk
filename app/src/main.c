@@ -18,14 +18,15 @@
 
 void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
 
-PSRAM_HandleTypeDef _psram;
-//static DMA_LinkDescriptor tx_desc[2];
+#ifndef USE_PSRAM
+#warning "PSRAM is not enabled! define USE_PSRAM!"
+#endif
 
 int i, j;
 
 void Error_Handler(void);
 // flash-linked const
-const char _fish[] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+const char _fish[]  __attribute__ ((section (".psram"))) = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 DMA_HandleTypeDef hdma_ram_tx;
 
 /*
@@ -78,10 +79,6 @@ int main(void)
     SystemClock_Config(CPU_CLK_240M);
     printf("enter main\r\n");
 
-    _psram.Init.Div = 3; // from 3 to 15 (check APBCLK)
-    _psram.Init.Mode = PSRAM_MODE_QSPI;
-    _psram.Instance = PSRAM;
-
     my_tim.Instance = TIM0;
     my_tim.Init.Unit = TIM_UNIT_US;
     my_tim.Init.AutoReload = TIM_AUTORELOAD_PRELOAD_ENABLE;
@@ -105,8 +102,6 @@ int main(void)
 
     printf("mem2mem @64k is %uus\n", ticks1-ticks0);
     printf("Calculated value is %3.3f MB/s\n", 1000000.0/((ticks1-ticks0)*16)); // 64-128-256-512-1024
-
-    HAL_PSRAM_Init(&_psram);
 
     char *psblock = psalloc(0x10000);
     if(psblock == NULL){		// how to detect PSRAM presence?

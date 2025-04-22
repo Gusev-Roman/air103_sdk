@@ -24,6 +24,10 @@
 #include <csi_config.h>
 #include "csi_core.h"
 
+#ifdef USE_PSRAM
+#include "wm_psram.h"
+PSRAM_HandleTypeDef __psram;
+#endif
 /**
   * @brief  initialize the system
   *         Initialize the psr and vbr.
@@ -50,5 +54,11 @@ void SystemInit(void)
 
 #ifdef CONFIG_KERNEL_NONE
     __enable_excp_irq();
+#endif
+#ifdef USE_PSRAM
+    __psram.Init.Div = 3;
+    __psram.Init.Mode = PSRAM_MODE_QSPI;
+    __psram.Instance = PSRAM;
+    HAL_PSRAM_Init(&__psram);
 #endif
 }
