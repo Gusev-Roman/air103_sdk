@@ -108,15 +108,16 @@ LD_FILE = $(LDDIR)/gcc_csky.ld
 LIB_EXT = .a
 
 CCFLAGS := -Wall \
-    -DUSE_PSRAM=1 \
     -DTLS_CONFIG_CPU_XT804=1 \
     -DGCC_COMPILE=1 \
+    $(RUNIL) \
+    -DSPIN=1 \
     -mcpu=$(cputype) \
     $(optimization) \
     -std=gnu99 \
     -c  \
     -mhard-float  \
-    $(extra_flag)  \
+    $(extra_flag) \
     -fdata-sections  \
     -ffunction-sections
 

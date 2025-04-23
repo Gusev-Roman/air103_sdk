@@ -107,7 +107,7 @@ PSRAM_HandleTypeDef __psram;
 
 void board_init(void)
 {
-    //uint32_t f = 100000000;
+    uint32_t volatile f = 10000000UL;		// 10M at 120 MHz??
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 #if USE_UART0_PRINT
     /* use uart0 as log output io */
@@ -126,8 +126,8 @@ void board_init(void)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26, GPIO_PIN_SET);
 
-    //while(f > 0) f--;           // 400 ms
-    HAL_Delay(5);
+    while(f > 0) f--;           // some delay (?)
+    //HAL_Delay(5);
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26, GPIO_PIN_RESET);  // LEDs off
     printf("LEDs blinked\r\n");

@@ -26,7 +26,8 @@ int i, j;
 
 void Error_Handler(void);
 // flash-linked const
-const char _fish[]  __attribute__ ((section (".psram"))) = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+const char _fish[]  __attribute__ ((section(".psram.goo"))) = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+char _psbuf[1024] __attribute__ ((section(".bss")));
 DMA_HandleTypeDef hdma_ram_tx;
 
 /*
@@ -78,6 +79,7 @@ int main(void)
 
     SystemClock_Config(CPU_CLK_240M);
     printf("enter main\r\n");
+    memset(_psbuf, -1, 1024);
 
     my_tim.Instance = TIM0;
     my_tim.Init.Unit = TIM_UNIT_US;

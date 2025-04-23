@@ -1,4 +1,5 @@
 TOP_DIR := .
+RUNIL = -DUSE_PSRAM=1
 sinclude $(TOP_DIR)/tools/W806/conf.mk
 
 ifndef PDIR # {
@@ -41,9 +42,8 @@ endif
 LINKFLAGS_$(TARGET) =  \
     $(LINKLIB)
 
-CONFIGURATION_DEFINES = -DDEBUG=1 -DUSE_PSRAM=1
+CONFIGURATION_DEFINES = -DDEBUG=1
 
-extra_flag = -DUSE_PSRAM=1
 DEFINES += $(CONFIGURATION_DEFINES)
 
 DDEFINES +=                \

@@ -146,11 +146,11 @@ Reset_Handler:
  *
  *  All addresses must be aligned to 4 bytes boundary.
  */
-    lrw     r1, __erodata
-    lrw     r2, __data_start__
-    lrw     r3, __data_end__
+    lrw     r1, __erodata	; 8014F70 
+    lrw     r2, __data_start__	; 20000100
+    lrw     r3, __data_end__	; 20000168
 
-    subu    r3, r2
+    subu    r3, r2		; 68
     cmpnei  r3, 0
     bf      .L_loop0_done
 
@@ -194,7 +194,9 @@ Reset_Handler:
 #ifndef __NO_SYSTEM_INIT
     jbsr    SystemInit
 #endif
-
+/*
+    Тут можно попробовать перекинуть секцию в PSRAM
+*/
 #ifndef __NO_BOARD_INIT
     jbsr    board_init
 #endif

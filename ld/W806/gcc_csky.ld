@@ -67,8 +67,8 @@ SECTIONS
  .psram : {
   . = ALIGN(0x4) ;
   __spsram = .;
-  *(.data.*)
-  *(COMMON)
+  *(.psram)
+  *(.psram*)
   __epsram = .;
  } > REGION_PSRAM
 
@@ -117,8 +117,8 @@ SECTIONS
   *(.data)
   *(.data*)
   *(.data1)
+  *(.data.*)
   *(.gnu.linkonce.d*)
-  *(.data1)
   *(.gcc_except_table)
   *(.gcc_except_table*)
   __start_init_call = .;
@@ -150,6 +150,7 @@ SECTIONS
   *(.dynbss)
   *(.bss)
   *(.bss.*)
+  *(COMMON)
   . = ALIGN(0x4) ;
   __ebss = . ;
   __end = . ;

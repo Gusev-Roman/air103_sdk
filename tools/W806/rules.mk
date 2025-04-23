@@ -32,7 +32,7 @@ OIMAGES := $(GEN_IMAGES:%=$(IMAGEODIR)/%)
 
 OBINS := $(GEN_BINS:%=$(BINODIR)/%)
 
-CFLAGS = $(CCFLAGS) $(DEFINES) $(EXTRA_CCFLAGS) $(INCLUDES)
+CFLAGS =$(CCFLAGS) $(DEFINES) $(EXTRA_CCFLAGS) $(INCLUDES)
 
 CXXFLAGS = $(CCXXFLAGS) $(DEFINES) $(EXTRA_CCXXFLAGS) $(INCLUDES)
 
@@ -169,6 +169,8 @@ erase:
 
 mon:
 	pyserial-miniterm --rts 0 /dev/$(DL_PORT) 115200
+gego:
+	@echo $(CFLAGS)
 
 .subdirs:
 	@set -e; $(foreach d, $(SUBDIRS), $(MAKE) -C $(d);)
