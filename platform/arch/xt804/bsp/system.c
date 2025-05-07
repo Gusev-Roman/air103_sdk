@@ -23,15 +23,12 @@
 
 #include <csi_config.h>
 #include "csi_core.h"
-//#include <wm_cpu.h>
-//#include "wm_gpio.h"
 
-/*
 #ifdef USE_PSRAM
 #include "wm_psram.h"
 PSRAM_HandleTypeDef __psram;
 #endif
-*/
+
 /**
   * @brief  initialize the system
   *         Initialize the psr and vbr.
@@ -64,14 +61,15 @@ void SystemInit(void)
     __enable_excp_irq();
 #endif
 
-/*
 #ifdef USE_PSRAM
     __psram.Init.Div = 3;
     __psram.Init.Mode = PSRAM_MODE_QSPI;
-    __psram.Instance = PSRAM;
-    //HAL_PSRAM_Init(&__psram);
+    __psram.Instance  = PSRAM;
+    HAL_PSRAM_Init(&__psram);
+#else
+#warning "PSRAM OFF"
 #endif
-*/
+
     //HAL_Delay(50); // такая пауза завешивает проц, попробуем большой цикл...
     //uint32_t f = 100000000;
     //while(f > 0) f--;		// 400 ms

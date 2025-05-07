@@ -100,11 +100,6 @@ static void uart1Init (int bandrate)
 }
 #endif
 
-#ifdef USE_PSRAM
-#include "wm_psram.h"
-PSRAM_HandleTypeDef __psram;
-#endif
-
 void board_init(void)
 {
     uint32_t volatile f = 10000000UL;		// 10M at 120 MHz??
@@ -131,13 +126,4 @@ void board_init(void)
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26, GPIO_PIN_RESET);  // LEDs off
     printf("LEDs blinked\r\n");
-#ifdef USE_PSRAM
-    __psram.Init.Div = 3;
-    __psram.Init.Mode = PSRAM_MODE_QSPI;
-    __psram.Instance = PSRAM;
-    HAL_PSRAM_Init(&__psram);
-    printf("PSRAM init done!\r\n");
-#else
-#error "PSRAM is not init!"
-#endif
 }

@@ -120,8 +120,8 @@ Reset_Handler:
  *	move __Vectors to irq_vectors
  */
     lrw     r1, __Vectors
-    lrw     r2, __vdata_start__
-    lrw     r3, __vdata_end__
+    lrw     r2, __vdata_start__     /* 20000000 */
+    lrw     r3, __vdata_end__       /* 20000100 */
 
     subu    r3, r2
     cmpnei  r3, 0
@@ -146,11 +146,11 @@ Reset_Handler:
  *
  *  All addresses must be aligned to 4 bytes boundary.
  */
-    lrw     r1, __erodata	; 8014F70 
-    lrw     r2, __data_start__	; 20000100
-    lrw     r3, __data_end__	; 20000168
+    lrw     r1, __erodata	    /* 8014F70 */
+    lrw     r2, __data_start__	/* 20000100 */
+    lrw     r3, __data_end__	/* 20000168 */
 
-    subu    r3, r2		; 68
+    subu    r3, r2		/* 68 */
     cmpnei  r3, 0
     bf      .L_loop0_done
 

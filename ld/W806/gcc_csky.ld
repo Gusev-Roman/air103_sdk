@@ -22,7 +22,7 @@
  ******************************************************************************/
 MEMORY
 {
-    I-SRAM : ORIGIN = 0x08010400 , LENGTH = 0xEFC00 /* I-SRAM  1MB */ 
+    I-SRAM : ORIGIN = 0x08010400 , LENGTH = 0xEFC00   /* I-SRAM  1MB */ 
     D-SRAM : ORIGIN = 0x20000100 , LENGTH = 0x47f00   /* D-SRAM  288KB */
     V-SRAM : ORIGIN = 0x20000000 , LENGTH = 0x100
     P-SRAM : ORIGIN = 0x30000000 , LENGTH = 0x800000  /* off-chip SRAM 8MB */    
@@ -139,6 +139,7 @@ SECTIONS
   __edata = .;
   __data_end__ = .;
  } > REGION_DATA AT > REGION_RODATA
+
  .bss : {
   . = ALIGN(0x4) ;
   __sbss = ALIGN(0x4) ;
@@ -157,12 +158,14 @@ SECTIONS
   end = . ;
   __bss_end__ = .;
  } > REGION_BSS
+ 
  ._user_heap : {
   . = ALIGN(0x4) ;
   __heap_start = .;
   . += __min_heap_size;
   . = ALIGN(0x4) ;
  } > REGION_BSS
+
  .eh_frame : ONLY_IF_RO { KEEP (*(.eh_frame)) } > REGION_BSS
  .gcc_except_table : ONLY_IF_RO { *(.gcc_except_table .gcc_except_table.*) } > REGION_BSS
  .eh_frame : ONLY_IF_RW { KEEP (*(.eh_frame)) }
