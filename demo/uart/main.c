@@ -9,10 +9,11 @@ UART_HandleTypeDef huart1;
 static void UART1_Init(void);
 void Error_Handler(void);
 
-#define IT_LEN 0     // 大于等于0，0：接收不定长数据即可触发中断回调；大于0：接收N个长度数据才触发中断回调
-static uint8_t buf[32] = {0}; // 必须大于等于32字节
+#define IT_LEN 0     // Greater than or equal to 0, 0: receiving data of indefinite length can trigger the interrupt callback; greater than 0: receiving N length data will trigger the interrupt callback
+static uint8_t buf[32] = {0}; // Must be greater than or equal to 32 bytes
 #define LEN 2048
 static uint8_t pdata[LEN] = {0};
+
 int main(void)
 {
     volatile int tx_len = 0;
@@ -23,8 +24,9 @@ int main(void)
     
     UART1_Init();
     FifoInit(pdata, LEN);
-    HAL_UART_Receive_IT(&huart1, buf, IT_LEN);  // 只需调用一次，接收够设定的长度，进入中断回调，用户需要在中断回调中取走数据，此处设置了
-                                                // 0个字节，即不定长
+    HAL_UART_Receive_IT(&huart1, buf, IT_LEN);  // It only needs to be called once. When receiving the set length,
+                                                // it will enter the interrupt callback. The user needs to take the data
+                                                // in the interrupt callback. 0 bytes are set here, that is, the length is indefinite.
     while(1)
     {
         tx_len = FifoDataLen();

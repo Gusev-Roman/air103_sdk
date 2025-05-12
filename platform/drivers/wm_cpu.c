@@ -101,6 +101,8 @@ __attribute__((weak)) HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 __attribute__((weak)) void HAL_IncTick(void)
 {
     uwTick += 1;
+    // toggle pin
+    //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
 }
 
 __attribute__((weak)) uint32_t HAL_GetTick(void)

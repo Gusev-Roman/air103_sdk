@@ -249,8 +249,10 @@ void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
     uint32_t isrmasks   = READ_REG(huart->Instance->INTM);
 
     __HAL_UART_CLEAR_FLAG(huart, isrflags);
+    // UART_RX_INT_FLAG - пакет из 6 флагов
     if (((isrflags & UART_RX_INT_FLAG) != RESET) && ((isrmasks & UART_RX_INT_FLAG) == RESET))
     {
+        // UART_RX_ERR_INT_FLAG - пакет из 3 флагов ошибки
         if ((isrflags & UART_RX_ERR_INT_FLAG) != RESET)
         {
             huart->ErrorCode = isrflags & UART_RX_ERR_INT_FLAG;
@@ -261,12 +263,12 @@ void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
         }
         UART_Receive_IT(huart);
     }
-    
+    // TX_FIFO trigger level is set
     if (((isrflags & UART_INTS_TL) != RESET) && ((isrmasks & UART_INTM_RL) == RESET))
     {
         UART_Transmit_IT(huart);
     }
-
+    // TX_FIFO is empty
     if (((isrflags & UART_INTS_TEMPT) != RESET) && ((isrmasks & UART_INTM_TEMPT) == RESET))
     {
         UART_EndTransmit_IT(huart);
@@ -277,7 +279,7 @@ __attribute__((weak)) void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     UNUSED(huart);
 }
-
+// этот вызов переопределен в main()
 __attribute__((weak)) void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   UNUSED(huart);

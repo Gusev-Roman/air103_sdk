@@ -302,22 +302,19 @@
   </VirtualDirectory>
   <VirtualDirectory Name="app">
     <VirtualDirectory Name="src">
-      <File Name="../../../../../../../app/src/main.c">
+      <File Name="../../../../../../../app/src/main.c" ExcludeProjConfig="">
         <FileOption/>
       </File>
-      <File Name="../../../../../../../app/src/wm_hal_msp.c">
+      <File Name="../../../../../../../app/src/wm_hal_msp.c" ExcludeProjConfig="">
         <FileOption/>
       </File>
-      <File Name="../../../../../../../app/src/wm_it.c">
+      <File Name="../../../../../../../app/src/wm_it.c" ExcludeProjConfig="">
         <FileOption/>
       </File>
-      <File Name="../../../../../../../app/src/ascii_fonts.c" ExcludeProjConfig="BuildSet">
+      <File Name="../../../../../../../app/src/psalloc.c" ExcludeProjConfig="">
         <FileOption/>
       </File>
-      <File Name="../../../../../../../app/src/ssd1306.c" ExcludeProjConfig="BuildSet">
-        <FileOption/>
-      </File>
-      <File Name="../../../../../../../app/src/psalloc.c">
+      <File Name="../../../../../../../app/src/fifo.c" ExcludeProjConfig="">
         <FileOption/>
       </File>
     </VirtualDirectory>
@@ -328,22 +325,15 @@
       <File Name="../../../../../../../app/inc/psalloc.h">
         <FileOption/>
       </File>
+      <File Name="../../../../../../../app/src/fifo.h">
+        <FileOption/>
+      </File>
     </VirtualDirectory>
   </VirtualDirectory>
   <MonitorProgress>
     <FlashOperate>25</FlashOperate>
     <DebugLaunch>41</DebugLaunch>
   </MonitorProgress>
-  <DebugSessions>
-    <watchExpressions/>
-    <memoryExpressions>;;;</memoryExpressions>
-    <statistics>;;MHZ;</statistics>
-    <peripheralTabs/>
-    <WatchDisplayFormat>1</WatchDisplayFormat>
-    <LocalDisplayFormat>1</LocalDisplayFormat>
-    <debugLayout/>
-    <memoryTabColSizeExpressions>100:8;100:8;100:8;100:8;</memoryTabColSizeExpressions>
-  </DebugSessions>
   <VendorInfo>
     <VendorName>NULL</VendorName>
   </VendorInfo>
@@ -559,8 +549,18 @@
         <SoftResetVal/>
         <External>yes</External>
         <Command>$(ProjectPath)/../../../../../wm_tool.exe</Command>
-        <Arguments>-rs rts -ds 2M -dl $(ProjectPath)/../../../../../../../bin/W806/W806.fls -c COM15</Arguments>
+        <Arguments>-rs rts -ds 2M -dl $(ProjectPath)/../../../../../../../bin/W806/W806.fls -c COM3</Arguments>
       </Flash>
     </BuildConfig>
   </BuildConfigs>
+  <DebugSessions>
+    <watchExpressions/>
+    <memoryExpressions>;;;</memoryExpressions>
+    <statistics>;;MHZ;</statistics>
+    <peripheralTabs/>
+    <WatchDisplayFormat>1</WatchDisplayFormat>
+    <LocalDisplayFormat>1</LocalDisplayFormat>
+    <debugLayout/>
+    <memoryTabColSizeExpressions>100:8;100:8;100:8;100:8;</memoryTabColSizeExpressions>
+  </DebugSessions>
 </Project>

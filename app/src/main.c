@@ -15,6 +15,17 @@
 #include <wm_hal.h>
 #include "wm_psram.h"
 #include "psalloc.h"
+#include "fifo.h"
+
+PMU_HandleTypeDef hpmu;
+// имя не может быть другим для данного UART
+UART_HandleTypeDef huart1;
+#define IT_LEN 0
+static uint8_t buf[32] = {0};
+#define LEN 2048
+static uint8_t pdata[LEN] = {0};
+uint32_t ticks_tm0_beg, ticks_tm0_end;
+
 
 void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
 
@@ -30,6 +41,12 @@ const char _fish[]  __attribute__ ((section(".psram.goo"))) = "Lorem ipsum dolor
 char _psbuf[1024] __attribute__ ((section(".bss")));
 DMA_HandleTypeDef hdma_ram_tx;
 
+void HAL_PMU_RTC_Callback(PMU_HandleTypeDef *hpmu)
+{
+    // 1s elapsed! Get tim0 counter!
+    ticks_tm0_end = TIM->TIM0_CNT;
+    printf("\n2s timer0 ticks elapsed: %d\n", ticks_tm0_end-ticks_tm0_beg);
+}
 /*
 static void DMA_Init(void)
 {
@@ -42,6 +59,34 @@ static void DMA_Init(void)
     HAL_NVIC_EnableIRQ(DMA_Channel1_IRQn);
 }
 */
+
+/*
+ * Иногда двойная звездочка, значит, FifoSpaceLen() не хватает для текущей порции данных. 
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (FifoSpaceLen() >= huart->RxXferCount)
+    {
+        FifoWrite(huart->pRxBuffPtr, huart->RxXferCount);
+    }
+    else printf("_");
+}
+
+static void UART1_Init(void)
+{
+    huart1.Instance = UART1;
+    huart1.Init.BaudRate = 115200;
+    huart1.Init.WordLength = UART_WORDLENGTH_8B;
+    huart1.Init.StopBits = UART_STOPBITS_1;
+    huart1.Init.Parity = UART_PARITY_NONE;
+    huart1.Init.Mode = UART_MODE_TX | UART_MODE_RX;
+    huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    if (HAL_UART_Init(&huart1) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
 void heapdump(void)
 {
     _HEAPINFO hinfo;
@@ -73,21 +118,68 @@ void heapdump(void)
 int main(void)
 {
     TIM_HandleTypeDef my_tim;
+    RTC_TimeTypeDef rtc_time;
     uint32_t ticks0, ticks1, ticks2, ticks3, ticks4;
     HAL_StatusTypeDef stat;
     char *membuf1, *membuf2;
+    volatile int tx_len = 0;
+    uint8_t tx_buf[200] = {0};
 
     SystemClock_Config(CPU_CLK_240M);
     printf("enter main\r\n");
+    UART1_Init();
     memset(_psbuf, -1, 1024);
 
     my_tim.Instance = TIM0;
     my_tim.Init.Unit = TIM_UNIT_US;
     my_tim.Init.AutoReload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-    my_tim.Init.Period = 4000000; //each us will increase timer
+    // APB всегда 40М
+    // период - это то что загружается в счетный регистр. А в предделителе 39 по дефолту!
+    my_tim.Init.Period = 4000*1000; // считать до 4М и снова с 0. Переполнение раз в 4 сек.
 
     __HAL_RCC_TIM_CLK_ENABLE();	// enable timer clocking!
     HAL_TIM_Base_Init(&my_tim); //HAL_TIM_Base_Init
+    
+    // GPIO Init A1
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    
+    __HAL_RCC_GPIO_CLK_ENABLE();
+
+    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+    
+    
+    ticks_tm0_beg = TIM->TIM0_CNT;
+    HAL_Delay(1000);
+    ticks_tm0_end = TIM->TIM0_CNT;
+    printf("HAL_Delay(1000) ticks elapsed: %d\n", ticks_tm0_end-ticks_tm0_beg);
+    
+    // init RTC
+	hpmu.Instance = PMU;
+    hpmu.ClkSource = PMU_CLKSOURCE_32RC;
+    HAL_PMU_Init(&hpmu);
+    rtc_time.Year = 125;
+    rtc_time.Month = 5;
+    rtc_time.Date = 10;
+    rtc_time.Hours = 14;
+    rtc_time.Minutes = 28;
+    rtc_time.Seconds = 10;
+    // Calibration!
+    uint32_t c32 = hpmu.Instance->CR;
+    printf("c32=%x\n", c32);
+    CLEAR_BIT(hpmu.Instance->CR, 8);
+    SET_BIT(hpmu.Instance->CR, 8);
+    //hpmu.Instance->CR = 22;
+    
+    HAL_PMU_RTC_Start(&hpmu, &rtc_time);
+    
+    rtc_time.Seconds = 12;  // current + 10 sec (?)
+    ticks_tm0_beg = TIM->TIM0_CNT;
+    HAL_PMU_RTC_Alarm_Enable(&hpmu, &rtc_time); // callback after 3 sec
+      
 
     /*mem2mem*/
     membuf1 = malloc(0x10000);
@@ -96,13 +188,13 @@ int main(void)
         printf("malloc error!\n");
         while(1);
     }
-    HAL_TIM_Base_Start(&my_tim);	// start counter (memset & memcpy)
     memset(membuf2, 'A', 0x10000);
+    HAL_TIM_Base_Start(&my_tim);	// start counter (memset & memcpy)
     ticks0 = TIM->TIM0_CNT;
     memcpy(membuf1, membuf2, 0x10000); // 'A' to membuf1
     ticks1 = TIM->TIM0_CNT;
 
-    printf("mem2mem @64k is %uus\n", ticks1-ticks0);
+    printf("mem2mem @64k is %dus\n", ticks1-ticks0);
     printf("Calculated value is %3.3f MB/s\n", 1000000.0/((ticks1-ticks0)*16)); // 64-128-256-512-1024
 
     char *psblock = psalloc(0x10000);
@@ -156,6 +248,8 @@ int main(void)
             printf("q[%d]=[%s]\n", i, q[i]);
         }
         HAL_Delay(1000);        // 1s delay
+        HAL_PMU_RTC_GetTime(&hpmu, &rtc_time);
+        printf("%d-%d-%d %d:%d:%d\r\n", (rtc_time.Year + 1900), rtc_time.Month, rtc_time.Date, rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds);
     }
     for(i=0;i<5;i++) psfree(q[i]);
 
@@ -165,8 +259,23 @@ int main(void)
     printf("Now heap MUST be totally empty!\n");
     heapdump();
     free(q);
+    free(membuf1);
+    free(membuf2);
+    
+    FifoInit(pdata, LEN);
+    HAL_UART_Receive_IT(&huart1, buf, IT_LEN);  // It only needs to be called once. When receiving the set length,
 
-    while(1);	// loop forewer
+    while(1){	// loop forewer
+        tx_len = FifoDataLen();
+        if (tx_len > 0)
+        {
+            tx_len = (tx_len > 100) ? 100 : tx_len;
+            FifoRead(tx_buf, tx_len);
+            tx_buf[tx_len] = 0;
+            //HAL_UART_Transmit(&huart1, tx_buf, tx_len, 1000);
+            printf("{%s}\n", tx_buf);
+        }
+    }
 }
 
 void assert_failed(uint8_t *file, uint32_t line)

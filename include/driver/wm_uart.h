@@ -218,11 +218,11 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
 HAL_StatusTypeDef HAL_UART_Transmit_IT(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
 
 /**
-  * 以中断方式接收一定长度的数据.
-  * 注意：pData指向的地址，空间长度必须大于等于32字节
-  *       Size大于0，则接收够Size长度的数据执行一次HAL_UART_RxCpltCallback(huart);
-  *       Sized等于0，则接收不定长的数据就执行一次HAL_UART_RxCpltCallback(huart);
-  *       两种情况下，数据都存放在huart->pRxBuffPtr或者pData中，数据长度存放在huart->RxXferCount中
+  * Receive data of a certain length in interrupt mode.
+  * Note: The address pointed to by pData must have a space length greater than or equal to 32 bytes
+  *       If Size is greater than 0, then receive data of sufficient length and execute HAL_UART_RxCpltCallback(huart);
+  *       If Sized is 0, HAL_UART_RxCpltCallback(huart) will be executed once when receiving data of indefinite length;
+  *       In both cases, the data is stored in huart->pRxBuffPtr or pData, and the data length is stored in huart->RxXferCount
   */
 HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
 

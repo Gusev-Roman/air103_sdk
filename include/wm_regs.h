@@ -212,7 +212,7 @@ typedef struct
 #define PMU_CR_WAKEUP_COUNT_Msk              (0x0F << PMU_CR_WAKEUP_COUNT_Pos)
 #define PMU_CR_WAKEUP_COUNT                  PMU_CR_WAKEUP_COUNT_Msk
 #define PMU_CR_32KRCBYPASS_Pos               (4)
-#define    PMU_CR_32KRCBYPASS_Msk            (0x01 << PMU_CR_32KRCBYPASS_Pos)
+#define PMU_CR_32KRCBYPASS_Msk               (0x01 << PMU_CR_32KRCBYPASS_Pos)
 #define PMU_CR_32KRCBYPASS                   PMU_CR_32KRCBYPASS_Msk
 #define PMU_CR_32KRC_CAL_EN_Pos              (3)
 #define PMU_CR_32KRC_CAL_EN_Msk              (0x01 << PMU_CR_32KRC_CAL_EN_Pos)
@@ -1025,31 +1025,39 @@ typedef struct
 #define UART_INTM_TEMPT_Pos                 (0)
 #define UART_INTM_TEMPT_Msk                 (0x1 << UART_INTM_TEMPT_Pos)
 #define UART_INTM_TEMPT                     UART_INTM_TEMPT_Msk
-
+// RX_FIFO_Overflow flag
 #define UART_INTS_OE_Pos                    (8)
 #define UART_INTS_OE_Msk                    (0x1 << UART_INTS_OE_Pos)
 #define UART_INTS_OE                        UART_INTS_OE_Msk
+// Parity error flag
 #define UART_INTS_PE_Pos                    (7)
 #define UART_INTS_PE_Msk                    (0x1 << UART_INTS_PE_Pos)
 #define UART_INTS_PE                        UART_INTS_PE_Msk
+// frame error flag (stop bit not detected)
 #define UART_INTS_FE_Pos                    (6)
 #define UART_INTS_FE_Msk                    (0x1 << UART_INTS_FE_Pos)
 #define UART_INTS_FE                        UART_INTS_FE_Msk
+// break detect flag
 #define UART_INTS_BD_Pos                    (5)
 #define UART_INTS_BD_Msk                    (0x1 << UART_INTS_BD_Pos)
 #define UART_INTS_BD                        UART_INTS_BD_Msk
+// CTS signal changed
 #define UART_INTS_CTS_Pos                   (4)
 #define UART_INTS_CTS_Msk                   (0x1 << UART_INTS_CTS_Pos)
 #define UART_INTS_CTS                       UART_INTS_CTS_Msk
+// RX_FIFO data timeout flag
 #define UART_INTS_RTO_Pos                   (3)
 #define UART_INTS_RTO_Msk                   (0x1 << UART_INTS_RTO_Pos)
 #define UART_INTS_RTO                       UART_INTS_RTO_Msk
+// RX_FIFO trigger level interrupt flag
 #define UART_INTS_RL_Pos                    (2)
 #define UART_INTS_RL_Msk                    (0x1 << UART_INTS_RL_Pos)
 #define UART_INTS_RL                        UART_INTS_RL_Msk
+// TX_FIFO trigger level interrupt flag
 #define UART_INTS_TL_Pos                    (1)
 #define UART_INTS_TL_Msk                    (0x1 << UART_INTS_TL_Pos)
 #define UART_INTS_TL                        UART_INTS_TL_Msk
+// TX_FIFO empty interrupt flag
 #define UART_INTS_TEMPT_Pos                 (0)
 #define UART_INTS_TEMPT_Msk                 (0x1 << UART_INTS_TEMPT_Pos)
 #define UART_INTS_TEMPT                     UART_INTS_TEMPT_Msk

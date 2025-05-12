@@ -24,3 +24,10 @@ __attribute__((isr)) void TIM0_5_IRQHandler(void)
     HAL_TIM_IRQHandler(&htim4);
     HAL_TIM_IRQHandler(&htim5);
 }
+
+extern UART_HandleTypeDef huart1;
+
+__attribute__((isr)) void UART1_IRQHandler(void)
+{
+    HAL_UART_IRQHandler(&huart1);
+}

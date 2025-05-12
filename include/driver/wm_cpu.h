@@ -51,6 +51,7 @@ typedef enum
     HAL_TICK_FREQ_10HZ         = 10,
     HAL_TICK_FREQ_100HZ        = 100,
     HAL_TICK_FREQ_1KHZ         = 1000,
+    HAL_TICK_FREQ_1MHZ         = 1000000,
     HAL_TICK_FREQ_DEFAULT      = HAL_TICK_FREQ_1KHZ
 } HAL_TickFreqTypeDef;
 
