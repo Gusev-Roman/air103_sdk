@@ -112,7 +112,6 @@ void board_init(void)
     /* use uart1 as log output io */
 	//uart1Init(115200);
 #endif
-    printf("board_init() passed\r\n");
     __HAL_RCC_GPIO_CLK_ENABLE();
 
     GPIO_InitStruct.Pin = GPIO_PIN_24 | GPIO_PIN_25 | GPIO_PIN_26;

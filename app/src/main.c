@@ -85,6 +85,7 @@ static void UART1_Init(void)
     {
         Error_Handler();
     }
+    WRITE_REG(huart1.Instance->FIFOC, 0x00);    // no FIFO!
 }
 
 void heapdump(void)
@@ -114,7 +115,15 @@ void heapdump(void)
     else if(heapstatus == _HEAPBADBEGIN) printf("_HEAPBADBEGIN\n");
     // _HEAPBADPTR - The _pentry field of the _HEAPINFO structure doesn't contain a valid pointer into the heap or entryinfo is a null pointer.
 }
-
+int parse_string(char *membuf)
+{
+    float a,b,c;
+    int32_t ai;
+    sscanf(membuf, "%f;%f;%f", &a, &b, &c);
+    ai = a * 1000;
+    printf("%d\t%f\t%f\n", ai, b, c);
+    return 0;
+}
 int main(void)
 {
     TIM_HandleTypeDef my_tim;
@@ -122,8 +131,9 @@ int main(void)
     uint32_t ticks0, ticks1, ticks2, ticks3, ticks4;
     HAL_StatusTypeDef stat;
     char *membuf1, *membuf2;
+    char *mempos;
     volatile int tx_len = 0;
-    uint8_t tx_buf[200] = {0};
+    uint8_t rx_buf[200] = {0};
 
     SystemClock_Config(CPU_CLK_240M);
     printf("enter main\r\n");
@@ -265,15 +275,27 @@ int main(void)
     FifoInit(pdata, LEN);
     HAL_UART_Receive_IT(&huart1, buf, IT_LEN);  // It only needs to be called once. When receiving the set length,
 
+    membuf1 = malloc(256);  // buffer for input string
+    mempos = membuf1;
     while(1){	// loop forewer
         tx_len = FifoDataLen();
         if (tx_len > 0)
         {
             tx_len = (tx_len > 100) ? 100 : tx_len;
-            FifoRead(tx_buf, tx_len);
-            tx_buf[tx_len] = 0;
-            //HAL_UART_Transmit(&huart1, tx_buf, tx_len, 1000);
-            printf("{%s}\n", tx_buf);
+            // приходят порции по 16 байт (аппаратный FIFO?) и "хвостик", если есть пауза между строками.
+            FifoRead(rx_buf, tx_len);
+            rx_buf[tx_len] = 0;
+            if(rx_buf[tx_len-1] == '\n'){ // line end detected
+                strcpy(mempos, (const char *)rx_buf);
+                parse_string(membuf1);
+                mempos = membuf1;       // clear buf
+            }
+            else{
+                strcpy(mempos, (const char *)rx_buf);
+                mempos += tx_len;       // move pointer to end of line
+            }
+            //HAL_UART_Transmit(&huart1, rx_buf, tx_len, 1000);
+            //printf("{%s}\n", rx_buf);
         }
     }
 }

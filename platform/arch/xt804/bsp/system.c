@@ -62,6 +62,7 @@ void SystemInit(void)
 #endif
 
 #ifdef USE_PSRAM
+#warning "PSRAM ON"
     __psram.Init.Div = 3;
     __psram.Init.Mode = PSRAM_MODE_QSPI;
     __psram.Instance  = PSRAM;
