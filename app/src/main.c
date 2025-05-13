@@ -25,6 +25,7 @@ static uint8_t buf[32] = {0};
 #define LEN 2048
 static uint8_t pdata[LEN] = {0};
 uint32_t ticks_tm0_beg, ticks_tm0_end;
+float *bigbuf;
 
 
 void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
@@ -117,11 +118,58 @@ void heapdump(void)
 }
 int parse_string(char *membuf)
 {
-    float a,b,c;
-    int32_t ai;
-    sscanf(membuf, "%f;%f;%f", &a, &b, &c);
-    ai = a * 1000;
-    printf("%d\t%f\t%f\n", ai, b, c);
+    float a,b,c,d,e,f,g,h,i,j,k;
+    int32_t ai=0;
+    int diff, num, nrow;
+    static bool _debug = false;
+    
+    if(_debug) printf(membuf);
+    
+    if(membuf[0] == '['){
+        memcmp_s(membuf, 7, "[begin:", 7, &diff);
+        if(diff == 0){
+            num = atoi(membuf+7);
+            printf("Loading:[waveform #%d]\n", num);
+        }
+        memcmp_s(membuf, 5, "[row:", 5, &diff);
+        if(diff == 0){
+            nrow = atoi(membuf+5);
+            printf("Selected row #%d\n", nrow);
+            if(nrow > -1 && nrow < 10){
+                // print selected row
+                for(int ii=0; ii<300; ii++){
+                    printf("%d:%f\n", ii,bigbuf[ii*10+nrow]);
+                }
+            }
+        }
+        
+    }
+    else{
+        sscanf(membuf, "%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f", &a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k);
+        ai = a * 1000;
+        if(ai == 250) _debug = true;
+        if(ai == 254) _debug = false;
+        if(_debug) printf("%d:\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", ai, b, c,d,e,f,g,h,i,j,k);
+        bigbuf[ai*10] = b;
+        bigbuf[ai*10+1] = c;
+        bigbuf[ai*10+2] = d;
+        bigbuf[ai*10+3] = e;
+        bigbuf[ai*10+4] = f;
+        bigbuf[ai*10+5] = g;
+        bigbuf[ai*10+6] = h;
+        bigbuf[ai*10+7] = i;
+        bigbuf[ai*10+8] = j;
+        bigbuf[ai*10+9] = k;
+
+        //printf("%05d\n", ai);
+    }
+    /*
+    if(ai==300){
+        for(int ii=0; ii<300; ii++){
+            printf("%f ", bigbuf[ii*10+5]);
+        }
+    }
+    */
     return 0;
 }
 int main(void)
@@ -277,6 +325,11 @@ int main(void)
 
     membuf1 = malloc(256);  // buffer for input string
     mempos = membuf1;
+
+    bigbuf = pscalloc(10*30000, sizeof(float)); // 10 rows of 30k of floats
+    if(bigbuf == NULL) printf("Error: bigbuf cannot be allocated!\n");
+    heapdump();
+    
     while(1){	// loop forewer
         tx_len = FifoDataLen();
         if (tx_len > 0)
