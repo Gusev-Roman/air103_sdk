@@ -142,13 +142,18 @@ int parse_string(char *membuf)
                 }
             }
         }
+        // теперь, когда в память загружены все треки, можно сделать play() на внешний DAC. Предварительно придется 
+        // сделать downscale до 8 (14) бит.
+        // выставить данные, ждать изменения таймера, кликнуть строб, небольшая пауза, кликнуть обратно.
+        // повторять пока не закончатся данные. 
         
     }
     else{
         sscanf(membuf, "%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f", &a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k);
-        ai = a * 1000;
-        if(ai == 250) _debug = true;
-        if(ai == 254) _debug = false;
+        //ai = ceilf(a * 1000.0);
+        ai = (0.1 + a * 1000.0);
+        //if(ai == 250) _debug = true;
+        //if(ai == 254) _debug = false;
         if(_debug) printf("%d:\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", ai, b, c,d,e,f,g,h,i,j,k);
         bigbuf[ai*10] = b;
         bigbuf[ai*10+1] = c;
