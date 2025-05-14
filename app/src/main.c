@@ -27,7 +27,7 @@ static uint8_t pdata[LEN] = {0};
 uint32_t ticks_tm0_beg, ticks_tm0_end;
 float *bigbuf;
 uint8_t *for_dac = NULL;
-
+TIM_HandleTypeDef my_tim;
 
 void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
 
@@ -35,7 +35,7 @@ void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
 #warning PSRAM is not enabled! Please use USE_PSRAM=1 define
 #endif
 
-int i, j;
+//int i, j;
 
 void Error_Handler(void);
 // flash-linked const
@@ -73,11 +73,22 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     }
     else printf("_");
 }
+static void GPIO_Init(void)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct); // init 8 lines at one time!
+
+    GPIO_InitStruct.Pin = GPIO_PIN_13;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); // init DAC clock
+}
 static void UART1_Init(void)
 {
     huart1.Instance = UART1;
-    huart1.Init.BaudRate = 115200;
+    huart1.Init.BaudRate = 460800;          // try high speed!
     huart1.Init.WordLength = UART_WORDLENGTH_8B;
     huart1.Init.StopBits = UART_STOPBITS_1;
     huart1.Init.Parity = UART_PARITY_NONE;
@@ -160,12 +171,28 @@ int parse_string(char *membuf)
         // сделать downscale до 8 (14) бит.
         // выставить данные, ждать изменения таймера, кликнуть строб, небольшая пауза, кликнуть обратно.
         // повторять пока не закончатся данные. 
-        
+        memcmp_s(membuf,7,"[start:",7, &diff);
+        if(diff == 0){
+            uint32_t clk;
+            int y = atoi(membuf+7);
+            printf("Playing waveform at %d us/sample\n", y);
+            HAL_TIM_Base_Stop(&my_tim);
+            MODIFY_REG(GPIOB->DATA, 0xFF, 0xFF); // маска нулей, маска единиц
+            HAL_TIM_Base_Start(&my_tim);
+            clk = TIM->TIM0_CNT;
+            while(TIM->TIM0_CNT - clk < y) __NOP;
+
+            printf("TIM0:%x\n", clk);
+            HAL_Delay(1000);
+            printf("ending TIM0:%x\n", TIM->TIM0_CNT);
+        }
     }
+
     else{
         sscanf(membuf, "%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f", &a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k);
         //ai = ceilf(a * 1000.0);
         ai = (0.1 + a * 1000.0);
+        if(ai % 100 == 0) HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_24);    // blink every 200 records
         //if(ai == 250) _debug = true;
         //if(ai == 254) _debug = false;
         if(_debug) printf("%d:\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", ai, b, c,d,e,f,g,h,i,j,k);
@@ -197,7 +224,6 @@ int parse_string(char *membuf)
 }
 int main(void)
 {
-    TIM_HandleTypeDef my_tim;
     RTC_TimeTypeDef rtc_time;
     uint32_t ticks0, ticks1, ticks2, ticks3, ticks4;
     HAL_StatusTypeDef stat;
@@ -317,7 +343,7 @@ int main(void)
 
     char **q = malloc(64 * sizeof(char *));		// array of 64 char * in regular RAM
 
-    for(i=0; i<5; i++){
+    for(int i=0; i<5; i++){
         q[i] = (char *)psalloc(strlen(_fish)+1);
         if(!q){
             printf("psalloc error!\n");
@@ -332,7 +358,7 @@ int main(void)
         HAL_PMU_RTC_GetTime(&hpmu, &rtc_time);
         printf("%d-%d-%d %d:%d:%d\r\n", (rtc_time.Year + 1900), rtc_time.Month, rtc_time.Date, rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds);
     }
-    for(i=0;i<5;i++) psfree(q[i]);
+    for(int i=0;i<5;i++) psfree(q[i]);
 
     heapdump();
     printf("Freeing big block...\n");
