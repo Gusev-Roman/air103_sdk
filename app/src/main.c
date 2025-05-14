@@ -26,6 +26,7 @@ static uint8_t buf[32] = {0};
 static uint8_t pdata[LEN] = {0};
 uint32_t ticks_tm0_beg, ticks_tm0_end;
 float *bigbuf;
+uint8_t *for_dac = NULL;
 
 
 void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
@@ -122,24 +123,37 @@ int parse_string(char *membuf)
     int32_t ai=0;
     int diff, num, nrow;
     static bool _debug = false;
+    static bool _loaded = false;
     
-    if(_debug) printf(membuf);
+    if(_debug) printf("%s", membuf);
     
     if(membuf[0] == '['){
         memcmp_s(membuf, 7, "[begin:", 7, &diff);
         if(diff == 0){
             num = atoi(membuf+7);
             printf("Loading:[waveform #%d]\n", num);
+            _loaded = false;
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24, GPIO_PIN_RESET);
         }
         memcmp_s(membuf, 5, "[row:", 5, &diff);
         if(diff == 0){
             nrow = atoi(membuf+5);
-            printf("Selected row #%d\n", nrow);
+            printf("Selected row #%d; downsampling to RAM...\n", nrow);
+            if(!_loaded){
+                printf("Error: \n");
+                return -1;
+            }
+            else{
+                if(for_dac == NULL) for_dac = malloc(30000); // 8 bit per sample
+            }
             if(nrow > -1 && nrow < 10){
                 // print selected row
-                for(int ii=0; ii<300; ii++){
-                    printf("%d:%f\n", ii,bigbuf[ii*10+nrow]);
+                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_25, GPIO_PIN_RESET);
+                for(int ii=0; ii<30000; ii++){
+                    for_dac[ii] = 0.1+((6.0 + bigbuf[ii*10+nrow])/0.046875);
+                    //printf("%d:%f\n", ii,bigbuf[ii*10+nrow]);
                 }
+                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_25, GPIO_PIN_SET);
             }
         }
         // теперь, когда в память загружены все треки, можно сделать play() на внешний DAC. Предварительно придется 
@@ -167,6 +181,10 @@ int parse_string(char *membuf)
         bigbuf[ai*10+9] = k;
 
         //printf("%05d\n", ai);
+    }
+    if(ai == 29999){
+        _loaded = true;
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24, GPIO_PIN_SET);    // data loaded
     }
     /*
     if(ai==300){
