@@ -19,7 +19,7 @@
 
 PMU_HandleTypeDef hpmu;
 // имя не может быть другим для данного UART
-UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart1, huart2;
 #define IT_LEN 0
 static uint8_t buf[32] = {0};
 #define LEN 2048
@@ -99,6 +99,22 @@ static void UART1_Init(void)
         Error_Handler();
     }
     WRITE_REG(huart1.Instance->FIFOC, 0x00);    // no FIFO!
+}
+
+static void UART2_Init(void)
+{
+    huart2.Instance = UART2;
+    huart2.Init.BaudRate = 115200; //460800;          // try high speed!
+    huart2.Init.WordLength = UART_WORDLENGTH_8B;
+    huart2.Init.StopBits = UART_STOPBITS_1;
+    huart2.Init.Parity = UART_PARITY_NONE;
+    huart2.Init.Mode = UART_MODE_TX | UART_MODE_RX;
+    huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    if (HAL_UART_Init(&huart2) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    WRITE_REG(huart2.Instance->FIFOC, 0x00);    // no FIFO!
 }
 
 void heapdump(void)
@@ -234,7 +250,8 @@ int main(void)
 
     SystemClock_Config(CPU_CLK_240M);
     printf("enter main\r\n");
-    UART1_Init();
+    //UART1_Init();
+    UART2_Init();
     memset(_psbuf, -1, 1024);
 
     my_tim.Instance = TIM0;
@@ -370,7 +387,7 @@ int main(void)
     free(membuf2);
     
     FifoInit(pdata, LEN);
-    HAL_UART_Receive_IT(&huart1, buf, IT_LEN);  // It only needs to be called once. When receiving the set length,
+    HAL_UART_Receive_IT(&huart2, buf, IT_LEN);  // It only needs to be called once. When receiving the set length,
 
     membuf1 = malloc(256);  // buffer for input string
     mempos = membuf1;

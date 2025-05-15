@@ -60,6 +60,14 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 		HAL_NVIC_SetPriority(UART1_IRQn, 0);
 		HAL_NVIC_EnableIRQ(UART1_IRQn);
 	}
+    if (huart->Instance == UART2){
+		__HAL_RCC_UART2_CLK_ENABLE();
+		__HAL_RCC_GPIO_CLK_ENABLE();
+		__HAL_AFIO_REMAP_UART2_TX(GPIOA, GPIO_PIN_2);
+		__HAL_AFIO_REMAP_UART2_RX(GPIOA, GPIO_PIN_3);
+		HAL_NVIC_SetPriority(UART2_5_IRQn, 0);
+		HAL_NVIC_EnableIRQ(UART2_5_IRQn);
+    }
 }
 
 void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
@@ -69,7 +77,11 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 		__HAL_RCC_UART1_CLK_DISABLE();
 		HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6|GPIO_PIN_7);
 	}
-
+	if (huart->Instance == UART2)
+	{
+		__HAL_RCC_UART2_CLK_DISABLE();
+		HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2|GPIO_PIN_3);
+	}
 }
 
 void HAL_PMU_MspInit(PMU_HandleTypeDef *hpmu)

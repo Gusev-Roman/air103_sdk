@@ -17,6 +17,13 @@ __attribute__((isr)) void UART1_IRQHandler(void)
     HAL_UART_IRQHandler(&huart1);
 }
 
+extern UART_HandleTypeDef huart2;
+
+__attribute__((isr)) void UART2_5_IRQHandler(void)
+{
+    HAL_UART_IRQHandler(&huart2);
+}
+
 __attribute__((isr)) void PMU_IRQHandler(void)
 {
     HAL_PMU_IRQHandler(&hpmu);
