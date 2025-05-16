@@ -17,17 +17,25 @@
 #include "psalloc.h"
 #include "fifo.h"
 
+// local functions 
+int parse_string(char *membuf);
+void Error_Handler(void);
+
+// init structures
 PMU_HandleTypeDef hpmu;
 // имя не может быть другим для данного UART
 UART_HandleTypeDef huart1, huart2;
+TIM_HandleTypeDef my_tim;
+DMA_HandleTypeDef hdma_ram_tx;
+
+
 #define IT_LEN 0
-static uint8_t buf[32] = {0};
 #define LEN 2048
+
+static uint8_t buf[32] = {0};
 static uint8_t pdata[LEN] = {0};
 uint32_t ticks_tm0_beg, ticks_tm0_end;
 float *bigbuf;
-uint8_t *for_dac = NULL;
-TIM_HandleTypeDef my_tim;
 
 void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
 
@@ -35,13 +43,8 @@ void HAL_DMA_MspInit(DMA_HandleTypeDef *hdma);
 #warning PSRAM is not enabled! Please use USE_PSRAM=1 define
 #endif
 
-//int i, j;
-
-void Error_Handler(void);
 // flash-linked const
 const char _fish[]  __attribute__ ((section(".psram.goo"))) = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-char _psbuf[1024] __attribute__ ((section(".bss")));
-DMA_HandleTypeDef hdma_ram_tx;
 
 void HAL_PMU_RTC_Callback(PMU_HandleTypeDef *hpmu)
 {
@@ -146,92 +149,7 @@ void heapdump(void)
     else if(heapstatus == _HEAPBADBEGIN) printf("_HEAPBADBEGIN\n");
     // _HEAPBADPTR - The _pentry field of the _HEAPINFO structure doesn't contain a valid pointer into the heap or entryinfo is a null pointer.
 }
-int parse_string(char *membuf)
-{
-    float a,b,c,d,e,f,g,h,i,j,k;
-    int32_t ai=0;
-    int diff, num, nrow;
-    static bool _debug = false;
-    static bool _loaded = false;
-    
-    if(_debug) printf("%s", membuf);
-    
-    if(membuf[0] == '['){
-        memcmp_s(membuf, 7, "[begin:", 7, &diff);
-        if(diff == 0){
-            num = atoi(membuf+7);
-            printf("Loading:[waveform #%d]\n", num);
-            _loaded = false;
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24, GPIO_PIN_RESET);
-        }
-        memcmp_s(membuf, 5, "[row:", 5, &diff);
-        if(diff == 0){
-            nrow = atoi(membuf+5);
-            printf("Selected row #%d; downsampling to RAM...\n", nrow);
-            if(!_loaded){
-                printf("Error: \n");
-                return -1;
-            }
-            else{
-                if(for_dac == NULL) for_dac = malloc(30000); // 8 bit per sample
-            }
-            if(nrow > -1 && nrow < 10){
-                // print selected row
-                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_25, GPIO_PIN_RESET);
-                for(int ii=0; ii<30000; ii++){
-                    for_dac[ii] = 0.1+((6.0 + bigbuf[ii*10+nrow])/0.046875);
-                    //printf("%d:%f\n", ii,bigbuf[ii*10+nrow]);
-                }
-                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_25, GPIO_PIN_SET);
-            }
-        }
-        // теперь, когда в память загружены все треки, можно сделать play() на внешний DAC. Предварительно придется 
-        // сделать downscale до 8 (14) бит.
-        // выставить данные, ждать изменения таймера, кликнуть строб, небольшая пауза, кликнуть обратно.
-        // повторять пока не закончатся данные. 
-        memcmp_s(membuf,7,"[start:",7, &diff);
-        if(diff == 0){
-            uint32_t clk;
-            int y = atoi(membuf+7);
-            printf("Playing waveform at %d us/sample\n", y);
-            HAL_TIM_Base_Stop(&my_tim);
-            //MODIFY_REG(GPIOB->DATA, 0, (0xFF << 6)); // маска нулей, маска единиц
-            // не трогаем data_en, нули запишутся во все невыбранные биты
-            WRITE_REG(GPIOB->DATA, (0xFF << 6));
-            HAL_TIM_Base_Start(&my_tim);
-            clk = TIM->TIM0_CNT;
-            while(TIM->TIM0_CNT - clk < y) __NOP;
 
-            printf("TIM0:%x\n", clk);
-            HAL_Delay(1000);
-            printf("ending TIM0:%x\n", TIM->TIM0_CNT);
-        }
-    }
-
-    else{
-        sscanf(membuf, "%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f", &a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k);
-        ai = (0.1 + a * 1000.0);
-        if(ai % 25 == 0) HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_24);    // blink every 50 records
-        //if(ai == 250) _debug = true;
-        //if(ai == 254) _debug = false;
-        if(_debug) printf("%d:\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", ai, b, c,d,e,f,g,h,i,j,k);
-        bigbuf[ai*10] = b;
-        bigbuf[ai*10+1] = c;
-        bigbuf[ai*10+2] = d;
-        bigbuf[ai*10+3] = e;
-        bigbuf[ai*10+4] = f;
-        bigbuf[ai*10+5] = g;
-        bigbuf[ai*10+6] = h;
-        bigbuf[ai*10+7] = i;
-        bigbuf[ai*10+8] = j;
-        bigbuf[ai*10+9] = k;
-    }
-    if(ai == 29999){
-        _loaded = true;
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24, GPIO_PIN_SET);    // data loaded
-    }
-    return 0;
-}
 int main(void)
 {
     RTC_TimeTypeDef rtc_time;
@@ -249,8 +167,7 @@ int main(void)
     UART2_Init();
     
     uint32_t data_en = READ_REG(GPIOB ->DATA_B_EN);
-    printf("GPIOB.DATA_EN:%X\n", data_en);   // 
-    memset(_psbuf, -1, 1024);
+    printf("GPIOB.DATA_EN:%X\n", data_en);              // по дефолту там 0xFFFFFFFF, то есть можно писать в каждый бит регистра
 
     my_tim.Instance = TIM0;
     my_tim.Init.Unit = TIM_UNIT_US;
@@ -341,6 +258,8 @@ int main(void)
         Error_Handler();
     }
     ticks4 = TIM->TIM0_CNT;
+    HAL_DMA_DeInit(&hdma_ram_tx);   // free DMA channel
+
     printf("DMA Transfer OK in %d (%u+%u+%u+%u) us!\n", ticks4-ticks0, ticks1-ticks0, ticks2-ticks1, ticks3-ticks2, ticks4-ticks3);
     printf("Last byte: %x\n", psblock[0xFFFF]);
     printf("Mid byte: %x\n", psblock[0x7FFF]);
