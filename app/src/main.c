@@ -77,6 +77,8 @@ static void GPIO_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+    __HAL_RCC_GPIO_CLK_ENABLE();
+    
     GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -104,7 +106,7 @@ static void UART1_Init(void)
 static void UART2_Init(void)
 {
     huart2.Instance = UART2;
-    huart2.Init.BaudRate = 115200; //460800;          // try high speed!
+    huart2.Init.BaudRate = 460800;          // try high speed!
     huart2.Init.WordLength = UART_WORDLENGTH_8B;
     huart2.Init.StopBits = UART_STOPBITS_1;
     huart2.Init.Parity = UART_PARITY_NONE;
@@ -193,7 +195,9 @@ int parse_string(char *membuf)
             int y = atoi(membuf+7);
             printf("Playing waveform at %d us/sample\n", y);
             HAL_TIM_Base_Stop(&my_tim);
-            MODIFY_REG(GPIOB->DATA, 0xFF, 0xFF); // маска нулей, маска единиц
+            //MODIFY_REG(GPIOB->DATA, 0, (0xFF << 6)); // маска нулей, маска единиц
+            // не трогаем data_en, нули запишутся во все невыбранные биты
+            WRITE_REG(GPIOB->DATA, (0xFF << 6));
             HAL_TIM_Base_Start(&my_tim);
             clk = TIM->TIM0_CNT;
             while(TIM->TIM0_CNT - clk < y) __NOP;
@@ -206,9 +210,8 @@ int parse_string(char *membuf)
 
     else{
         sscanf(membuf, "%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f", &a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k);
-        //ai = ceilf(a * 1000.0);
         ai = (0.1 + a * 1000.0);
-        if(ai % 100 == 0) HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_24);    // blink every 200 records
+        if(ai % 25 == 0) HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_24);    // blink every 50 records
         //if(ai == 250) _debug = true;
         //if(ai == 254) _debug = false;
         if(_debug) printf("%d:\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", ai, b, c,d,e,f,g,h,i,j,k);
@@ -222,20 +225,11 @@ int parse_string(char *membuf)
         bigbuf[ai*10+7] = i;
         bigbuf[ai*10+8] = j;
         bigbuf[ai*10+9] = k;
-
-        //printf("%05d\n", ai);
     }
     if(ai == 29999){
         _loaded = true;
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_24, GPIO_PIN_SET);    // data loaded
     }
-    /*
-    if(ai==300){
-        for(int ii=0; ii<300; ii++){
-            printf("%f ", bigbuf[ii*10+5]);
-        }
-    }
-    */
     return 0;
 }
 int main(void)
@@ -251,30 +245,23 @@ int main(void)
     SystemClock_Config(CPU_CLK_240M);
     printf("enter main\r\n");
     //UART1_Init();
+    GPIO_Init();
     UART2_Init();
+    
+    uint32_t data_en = READ_REG(GPIOB ->DATA_B_EN);
+    printf("GPIOB.DATA_EN:%X\n", data_en);   // 
     memset(_psbuf, -1, 1024);
 
     my_tim.Instance = TIM0;
     my_tim.Init.Unit = TIM_UNIT_US;
     my_tim.Init.AutoReload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-    // APB всегда 40М
-    // период - это то что загружается в счетный регистр. А в предделителе 39 по дефолту!
-    my_tim.Init.Period = 4000*1000; // считать до 4М и снова с 0. Переполнение раз в 4 сек.
+    // APB is always 40М
+    // Timer Prescaler is 39 by default!
+    my_tim.Init.Period = 60000*1000; // считать до 60М и снова с 0. Переполнение раз в 60 сек.
 
-    __HAL_RCC_TIM_CLK_ENABLE();	// enable timer clocking!
+    __HAL_RCC_TIM_CLK_ENABLE();	// enable timers clocking!
     HAL_TIM_Base_Init(&my_tim); //HAL_TIM_Base_Init
-    
-    // GPIO Init A1
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    
-    __HAL_RCC_GPIO_CLK_ENABLE();
-
-    GPIO_InitStruct.Pin = GPIO_PIN_1;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-    
+    HAL_TIM_Base_Start(&my_tim);
     
     ticks_tm0_beg = TIM->TIM0_CNT;
     HAL_Delay(1000);
@@ -313,7 +300,7 @@ int main(void)
         while(1);
     }
     memset(membuf2, 'A', 0x10000);
-    HAL_TIM_Base_Start(&my_tim);	// start counter (memset & memcpy)
+
     ticks0 = TIM->TIM0_CNT;
     memcpy(membuf1, membuf2, 0x10000); // 'A' to membuf1
     ticks1 = TIM->TIM0_CNT;
